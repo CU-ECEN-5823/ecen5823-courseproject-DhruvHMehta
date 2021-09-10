@@ -1,5 +1,5 @@
-# ecen5823-f21-assignment-1
-Code for Assignment 1 for Internet of Things, Embedded Firmware, ECEN-5823, Fall 2021
+# ecen5823-f21-assignment-2
+Code for Assignment 2 for Internet of Things, Embedded Firmware, ECEN-5823, Fall 2021
 
 
 ## Table of Contents
@@ -7,7 +7,8 @@ Code for Assignment 1 for Internet of Things, Embedded Firmware, ECEN-5823, Fall
 * [Assignment Questions](#assignmentquestions)
 
 ## Description
-Assignment files to blink LED0 and LED1 on the Blue Gecko Board and report current consumption from the Energy Profiler.
+Assignment files to blink LED0 in four energy modes:  
+EM0, EM1, EM2 and EM3. The energy profiler is used to find the current consumption in each mode.
 
 ## Assignment Questions
-Answers to assignment questions can be found in the [Assignment1-SimplicityExerciseQuestions](https://github.com/CU-ECEN-5823/ecen5823-assignment1-DhruvHMehta/blob/main/questions/Assignment1-SimplicityExerciseQuestions.md) file. 
+Answers to assignment questions can be found in the [Assignment2-ManagingEnergyModes](https://github.com/CU-ECEN-5823/ecen5823-assignment1-DhruvHMehta/blob/main/questions/Assignment2-ManagingEnergyModes.md) file. 
