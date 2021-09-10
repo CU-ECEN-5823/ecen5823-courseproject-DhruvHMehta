@@ -50,8 +50,22 @@
 #include "src/ble_device_type.h"
 #include "src/gpio.h"
 #include "src/lcd.h"
+#include "src/oscillators.h"
+#include "src/timers.h"
 
+/* Macros for Energy Modes */
+#define EM0 0 /* Run */
+#define EM1 1 /* Sleep */
+#define EM2 2 /* Deep Sleep */
+#define EM3 3 /* Stop */
 
+/* Energy Mode Select and LED Timing */
+#define LOWEST_ENERGY_MODE  EM0
+#define LETIMER_ON_TIME_MS  175
+#define LETIMER_PERIOD_MS   2250
+
+#define ENABLE  1
+#define DISABLE 0
 
 // See: https://docs.silabs.com/gecko-platform/latest/service/power_manager/overview
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
@@ -65,9 +79,12 @@
 //   up the MCU from the call to sl_power_manager_sleep() in the main while (1)
 //   loop.
 // Students: We'll need to modify this for A2 onward.
-#define APP_IS_OK_TO_SLEEP      (false)
-//#define APP_IS_OK_TO_SLEEP      (true)
 
+#if (LOWEST_ENERGY_MODE == EM0)
+#define APP_IS_OK_TO_SLEEP      (false)
+#else
+#define APP_IS_OK_TO_SLEEP      (true)
+#endif
 // Return values for app_sleep_on_isr_exit():
 //   SL_POWER_MANAGER_IGNORE; // The module did not trigger an ISR and it doesn't want to contribute to the decision
 //   SL_POWER_MANAGER_SLEEP;  // The module was the one that caused the system wakeup and the system SHOULD go back to sleep

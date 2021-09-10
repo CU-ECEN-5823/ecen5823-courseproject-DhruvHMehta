@@ -84,32 +84,22 @@ SL_WEAK void app_init(void)
   // This is called once during start-up.
   // Don't call any Bluetooth API functions until after the boot event.
 
-
   // Student Edit: Add a call to gpioInit() here
   gpioInit();
+  OscillatorInit();
+  LETIMER0Init();
+  LETIMER0InterruptEn();
 
-
-
+#if (LOWEST_ENERGY_MODE == EM0)
+  /* No em requirement */
+#elif (LOWEST_ENERGY_MODE == EM1)
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+#elif (LOWEST_ENERGY_MODE == EM2)
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM2);
+#elif (LOWEST_ENERGY_MODE == EM3)
+  /* No em requirement */
+#endif
 }
-
-
-/*****************************************************************************
- * delayApprox(), private to this file.
- * A value of 3500000 is ~ 1 second. After assignment 1 you can delete or
- * comment out this function. Wait loops are a bad idea in general.
- * We'll discuss how to do this a better way in the next assignment.
- *****************************************************************************/
-static void delayApprox(int delay)
-{
-  volatile int i;
-
-  for (i = 0; i < delay; ) {
-      i=i+1;
-  }
-
-} // delayApprox()
-
-
 
 
 /**************************************************************************//**
@@ -123,16 +113,7 @@ SL_WEAK void app_process_action(void)
   //         We will create/use a scheme that is far more energy efficient in
   //         later assignments.
 
-  delayApprox(3500000);
-
-  gpioLed0SetOn();
-  gpioLed1SetOn();
-
-  delayApprox(3500000);
-
-  gpioLed0SetOff();
-  gpioLed1SetOff();
-
+  /* Do nothing */
 }
 
 /**************************************************************************//**

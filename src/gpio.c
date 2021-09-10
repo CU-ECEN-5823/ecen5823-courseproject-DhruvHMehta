@@ -10,14 +10,7 @@
 
  */
 
-
-
-
 #include "gpio.h"
-
-
-
-
 
 // Set GPIO drive strengths and modes of operation
 void gpioInit()

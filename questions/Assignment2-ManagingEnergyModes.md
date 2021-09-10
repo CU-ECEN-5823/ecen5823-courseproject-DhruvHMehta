@@ -7,24 +7,24 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
 
 Energy Mode | Period average current (uA) | Average Current with LED off (uA) | Average Current with LED On (uA)
 ------------| ----------------------------|-----------------------------------|-------------------------
-EM0         |           TBD               |           TBD                     |         TBD
-EM1         |           TBD               |           TBD                     |         TBD
-EM2         |           TBD               |           TBD                     |         TBD
-EM3         |           TBD               |           TBD                     |         TBD
+EM0         |           4790              |           4760                    |         5250
+EM1         |           3350              |           3310                    |         3780
+EM2         |           43.23             |           2.42                    |         497
+EM3         |           43.43             |           2.23                    |         493.56
 
 **2. Fill in the below chart based on time measured period and LED on time measurements for EM2 and EM3 modes, replacing each TBD with measured values.  Use the [Selecting Ranges](https://www.silabs.com/documents/public/user-guides/ug343-multinode-energy-profiler.pdf) feature of the profiler to select the appropriate measurement range.  When measuring time, measure from peak current to peak current.  Your LED on time measurement should be accurate to 1ms and your period measurement should be accurate to within 10ms**
 
 Energy Mode | Period (s) | LED On Time (ms) |
 ------------| -----------|-------------------
-EM2         |   TBD      |        TBD
-EM3         |   TBD      |        TBD
+EM2         |   2.25     |        176
+EM3         |   2.23     |        176
 
 
 **3. ScreenShots**  
 
 ***EM0***  
 Period average current    
-![em0_avg_current_period][em0_avg_current_period]  
+![em0_avg_current_period][EM0_Avg.png]  
 Average Current with LED ***off***  
 ![em0_avg_current_ledoff][em0_avg_current_ledoff]  
 Average Current with LED ***on***  
