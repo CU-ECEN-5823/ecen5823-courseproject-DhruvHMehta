@@ -3,6 +3,8 @@
  *
  *  Created on: Sep 8, 2021
  *      Author: Dhruv
+ *      Brief : Contains functions for initializing the LETIMER0 and setting up
+ *              interrupts.
  */
 
 #include "timers.h"

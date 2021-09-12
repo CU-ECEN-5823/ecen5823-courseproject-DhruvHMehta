@@ -3,6 +3,7 @@
  *
  *  Created on: Sep 8, 2021
  *      Author: Dhruv
+ *      Brief : Initialization functions for oscillators.
  */
 #include "oscillators.h"
 

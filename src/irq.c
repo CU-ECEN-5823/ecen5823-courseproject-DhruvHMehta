@@ -3,9 +3,22 @@
  *
  *  Created on: Sep 8, 2021
  *      Author: Dhruv
+ *      Brief : Contains all IRQ Handlers.
  */
 #include "irq.h"
 
+/***************************************************************************//**
+ * @name LETIMER0_IRQHandler
+ *
+ * @brief
+ *   Interrupt handler which turns on LED0 on COMP1 interrupt and turns off
+ *   LED0 on UF interrupt of LETIMER0.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
 void LETIMER0_IRQHandler()
 {
   /* Check which IF is set */

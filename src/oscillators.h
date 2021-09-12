@@ -12,6 +12,18 @@
 #include "em_cmu.h"
 
 /* Function Prototypes */
+
+/***************************************************************************//**
+ * @name OscillatorInit
+ *
+ * @brief
+ *   Initializes LFXO for EM0/1/2 and ULFRCO for EM3.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
 void OscillatorInit();
 
 #endif /* SRC_OSCILLATORS_H_ */
