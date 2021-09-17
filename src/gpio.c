@@ -18,6 +18,7 @@ void gpioInit()
 
   // Student Edit:
 
+  /*
 	//GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthStrongAlternateStrong);
 	GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(LED0_port, LED0_pin, gpioModePushPull, false);
@@ -25,11 +26,28 @@ void gpioInit()
 	//GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthStrongAlternateStrong);
 	GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(LED1_port, LED1_pin, gpioModePushPull, false);
+*/
 
+  //GPIO_PinModeSet(I2C0_port, I2C0_SCL, gpioModePushPull, false);
+  //GPIO_PinModeSet(I2C0_port, I2C0_SDA, gpioModePushPull, false);
+  GPIO_PinModeSet(SENS_port, SENS_EN, gpioModePushPull, false);
 
 
 } // gpioInit()
 
+
+void sensorLPMControl(bool OnOff)
+{
+  if(OnOff == true)
+    {
+      GPIO_PinOutSet(SENS_port, SENS_EN);
+    }
+
+  else if(OnOff == false)
+    {
+      GPIO_PinOutClear(SENS_port, SENS_EN);
+    }
+}
 
 void gpioLed0SetOn()
 {

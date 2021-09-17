@@ -44,4 +44,17 @@ void LETIMER0Init();
  ******************************************************************************/
 void LETIMER0InterruptEn();
 
+/***************************************************************************//**
+ * @name timerWaitUs
+ *
+ * @brief
+ *   Delays/Spins for the time specified in us_wait. Has upper and lower limit
+ *   checks and a timer rollover check as well.
+ *
+ * @param[in] us_wait - Time to spin/delay
+ *
+ * @return void
+ ******************************************************************************/
+void timerWaitUs(uint32_t us_wait);
+
 #endif /* SRC_TIMERS_H_ */

@@ -11,8 +11,7 @@
  * @name LETIMER0_IRQHandler
  *
  * @brief
- *   Interrupt handler which turns on LED0 on COMP1 interrupt and turns off
- *   LED0 on UF interrupt of LETIMER0.
+ *   Interrupt handler which sets events based on the interrupt.
  *
  * @param[in] osc
  *   none
@@ -21,17 +20,17 @@
  ******************************************************************************/
 void LETIMER0_IRQHandler()
 {
+  //sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM2);
+
   /* Check which IF is set */
   uint32_t flags = LETIMER_IntGetEnabled(LETIMER0);
 
   /* Clear the interrupt */
   LETIMER_IntClear(LETIMER0, flags);
 
-  /* Turn on the LED if COMP1 interrupt is set */
-  if(flags == LETIMER_IEN_COMP1)
-    gpioLed0SetOn();
+  /* Set the UF Event */
+  if(flags == LETIMER_IEN_UF)
+    schedulerSetEvent_UF();
 
-  /* Turn off the LED if UF interrupt is set */
-  else if(flags == LETIMER_IEN_UF)
-    gpioLed0SetOff();
+  //sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM2);
 }

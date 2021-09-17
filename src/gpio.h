@@ -25,11 +25,11 @@
 #define LED0_pin   4
 #define LED1_port  gpioPortF
 #define LED1_pin   5
-
-
-
-
-
+#define I2C0_port  gpioPortC
+#define I2C0_SCL   10
+#define I2C0_SDA   11
+#define SENS_port  gpioPortD
+#define SENS_EN    15
 
 
 // Function prototypes
@@ -38,9 +38,7 @@ void gpioLed0SetOn();
 void gpioLed0SetOff();
 void gpioLed1SetOn();
 void gpioLed1SetOff();
-
-
-
+void sensorLPMControl(bool OnOff);
 
 
 #endif /* SRC_GPIO_H_ */
