@@ -23,11 +23,11 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
 4. How long is the Si7021 Powered On for 1 temperature reading?  
    Answer: 116.80 mS.
    <br>Screenshot:  
-   ![Time_lpmON](Time_lpmON)
+   ![Time_lpmON][Time_lpmON]
  
 [Avg_current_per_period]: screenshots/Avg_current_per_period.PNG "Avg_current_per_period" 
 [Avg_current_lpmOFF]: screenshots/Avg_current_lpmOFF.PNG "Avg_current_lpmOFF"
-[vAvg_current_lpmON]: screenshots/Avg_current_lpmON.PNG "Avg_current_lpmON"
+[Avg_current_lpmON]: screenshots/Avg_current_lpmON.PNG "Avg_current_lpmON"
 [Time_lpmON]: screenshots/Time_lpmON.PNG "Time_lpmON"
 
 
