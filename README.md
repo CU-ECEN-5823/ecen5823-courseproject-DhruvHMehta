@@ -11,4 +11,4 @@ Assignment files to schedule a temperature reading from the Si7021 (I2C Temperat
 Logged temperature values can be displayed on a terminal emulator program on a PC.
 
 ## Assignment Questions
-Answers to assignment questions can be found in the [Assignment3-I2CLoadPowerManagement](https://github.com/CU-ECEN-5823/ecen5823-assignment3-DhruvHMehta/blob/main/questions/Assignment3-I2CLoadPowerManagement) file. 
+Answers to assignment questions can be found in the [Assignment3-I2CLoadPowerManagement](https://github.com/CU-ECEN-5823/ecen5823-assignment3-DhruvHMehta/blob/main/questions/Assignment3-I2CLoadPowerManagement.md) file. 
