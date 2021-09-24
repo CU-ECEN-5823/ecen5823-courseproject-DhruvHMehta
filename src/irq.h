@@ -14,5 +14,9 @@
 #include "gpio.h"
 #include "scheduler.h"
 #include "timers.h"
+#include "em_i2c.h"
+
+uint32_t letimerMilliseconds();
+I2C_TransferReturn_TypeDef getI2CTransferReturn();
 
 #endif /* SRC_IRQ_H_ */

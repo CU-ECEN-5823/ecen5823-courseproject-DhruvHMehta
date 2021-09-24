@@ -49,15 +49,12 @@ void LETIMER0Init()
 
   /* Set COMP0 value to required value (same as CNT for reload) */
   LETIMER_CompareSet(LETIMER0, 0, LETIMER_CTR_VAL);
-
-  /* Set COMP1 value to required value */
-  LETIMER_CompareSet(LETIMER0, 1, LETIMER_COMP1_VAL);
 }
 
 void LETIMER0InterruptEn()
 {
-  /* Enable interrupts for UF and COMP1 */
-  LETIMER_IntEnable(LETIMER0, (LETIMER_IEN_UF | LETIMER_IEN_COMP1));
+  /* Enable interrupts for UF */
+  LETIMER_IntEnable(LETIMER0, LETIMER_IEN_UF);
 
   /* Clear any pending IRQ */
   NVIC_ClearPendingIRQ(LETIMER0_IRQn);
@@ -70,7 +67,7 @@ void LETIMER0InterruptEn()
 }
 
 
-void timerWaitUs(uint32_t us_wait)
+void timerWaitUs_polled(uint32_t us_wait)
 {
   uint32_t counterval;
   uint32_t reqcounter;
@@ -105,5 +102,49 @@ void timerWaitUs(uint32_t us_wait)
 
   /* Waste CPU cycles till CNT is less than desired time */
   while(LETIMER_CounterGet(LETIMER0) >= counterwait);
+
+}
+
+void timerWaitUs_irq(uint32_t us_wait)
+{
+  uint32_t counterval;
+  uint32_t reqcounter;
+  uint16_t counterwait;
+
+  /* Range check below lower limit of timer resolution */
+  if(us_wait <= (MICROSECOND/ACTUAL_CLOCK_FREQ))
+    us_wait = 0;
+
+  /* Range check over upper limit of timer resolution */
+  else if(us_wait >= (LETIMER_PERIOD_MS*1000))
+    us_wait = LETIMER_PERIOD_MS*1000;
+
+  /* Arithmetic to ensure value is not out of bounds of uint32_t
+   * If out of bounds, dividing up the large value first and then
+   * multiplying it as shown in the if clause below */
+  if(us_wait > UINT_CALC_MAX)
+    reqcounter = (((us_wait/1000) * ACTUAL_CLOCK_FREQ) / 1000);
+
+  /* Counter value to reach to wait for us_wait microseconds */
+  else reqcounter = ((us_wait * ACTUAL_CLOCK_FREQ) / MICROSECOND);
+
+  /* Get current CNT value */
+  counterval = LETIMER_CounterGet(LETIMER0);
+
+  /* If the requested time does not cause a timer rollover, continue normally */
+  if((counterval - reqcounter) >= 0)
+    counterwait = counterval - reqcounter;
+
+  /* Timer rollover will occur, calculate accordingly */
+  else counterwait = (LETIMER_CTR_VAL - (reqcounter - counterval));
+
+  /* Clear any pending interrupts for COMP1 */
+  LETIMER_IntClear(LETIMER0, LETIMER_IFC_COMP1);
+
+  /* Set COMP1 value to required value */
+  LETIMER_CompareSet(LETIMER0, 1, counterwait);
+
+  /* Enable interrupts for COMP1 */
+  LETIMER_IntEnable(LETIMER0, LETIMER_IEN_COMP1);
 
 }

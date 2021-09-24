@@ -3,7 +3,7 @@
  *
  *  Created on: Sep 14, 2021
  *      Author: Dhruv
- *      Brief : Contains the I2C intialization and communication functions to
+ *      Brief : Contains the I2C initialization and communication functions to
  *              get Temperature data from the Si7021 on-board sensor.
  */
 
@@ -24,6 +24,7 @@ uint8_t rx_Temp[2];
 
 void I2CInit()
 {
+
   init.port       = I2C0;
   init.sclPort    = gpioPortC;
   init.sclPin     = 10;
@@ -38,7 +39,7 @@ void I2CInit()
   I2CSPM_Init(&init);
 }
 
-uint8_t I2CTransfer(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen)
+uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen)
 {
   I2C_TransferReturn_TypeDef I2CTransferReturn;
 
@@ -48,11 +49,13 @@ uint8_t I2CTransfer(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen)
   TransferSeq.buf[0].data  = Data;
   TransferSeq.buf[0].len   = DataLen;
 
-  I2CTransferReturn = I2CSPM_Transfer(I2C0, &TransferSeq);
+  NVIC_EnableIRQ(I2C0_IRQn);
 
-  if(I2CTransferReturn != i2cTransferDone)
+  I2CTransferReturn = I2C_TransferInit(I2C0, &TransferSeq);
+
+  if(I2CTransferReturn < 0)
     {
-      LOG_ERROR("I2C Transfer Failed. Error = %d\n\r", I2CTransferReturn);
+      LOG_ERROR("I2C_TransferInit Failed. Error = %d\n\r", I2CTransferReturn);
       return 1;
     }
 
@@ -71,37 +74,48 @@ static void recvTempSi7021()
 }
 */
 
+void powerOnSi7021()
+{
+  /* Turn on power to the sensor and wait for 100ms */
+  sensorLPMControl(true);
+  timerWaitUs_irq(100*1000);
+}
+
 void getTemperatureSi7021()
+{
+  uint8_t ret_status;
+
+  /* Send the Temperature read command and check for error */
+  ret_status = I2CTransferInitWrapper(&cmd_Tread, I2C_FLAG_WRITE, sizeof(cmd_Tread));
+  if(ret_status)
+    {
+      sensorLPMControl(false);
+      return;
+    }
+}
+
+void waitConversionTimeSi7021()
+{
+  /* Wait for 15ms for the sensor to get the data */
+  timerWaitUs_irq(15*1000);
+}
+
+void readTemperatureSi7021()
+{
+  uint8_t ret_status;
+
+  /* Receive the temperature data and check for error */
+  ret_status = I2CTransferInitWrapper(&rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
+  if(ret_status)
+    {
+      sensorLPMControl(false);
+      return;
+    }
+}
+void reportTemperatureSi7021()
 {
   int Calc_Temp;
   uint16_t Read_Temp;
-  uint8_t ret_status;
-
-  /* Turn on power to the sensor and wait for 100ms */
-  sensorLPMControl(true);
-  timerWaitUs(100*1000);
-
-  /* Send the Temperature read command and check for error */
-  ret_status = I2CTransfer(&cmd_Tread, I2C_FLAG_WRITE, sizeof(cmd_Tread));
-  if(ret_status)
-    {
-      sensorLPMControl(false);
-      return;
-    }
-
-  /* Wait for 15ms for the sensor to get the data */
-  timerWaitUs(15*1000);
-
-  /* Receive the temperature data and check for error */
-  ret_status = I2CTransfer(&rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
-  if(ret_status)
-    {
-      sensorLPMControl(false);
-      return;
-    }
-
-  /* Turn off power to the sensor */
-  sensorLPMControl(false);
 
   /* Arrange MSB and LSB into Read_Temp variable */
   Read_Temp = ((rx_Temp[0] << 8) | rx_Temp[1]);
@@ -109,4 +123,8 @@ void getTemperatureSi7021()
   /* Convert received value to degrees Celsius and log */
   Calc_Temp = (175 * Read_Temp)/65536 - 47;
   LOG_INFO("Temperature = %dC\n\r", Calc_Temp);
+
+  /* Turn off power to the sensor */
+  sensorLPMControl(false);
+
 }

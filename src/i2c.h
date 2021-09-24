@@ -26,7 +26,7 @@
 void I2CInit();
 
 /***************************************************************************//**
- * @name I2CTransfer
+ * @name I2CTransferInitWrapper
  *
  * @brief
  *   Sets up the transfer sequence structure for the I2CSPM_Transfer call
@@ -38,7 +38,7 @@ void I2CInit();
  *
  * @return status - Transfer successful/unsuccesful
  ******************************************************************************/
-uint8_t I2CTransfer(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen);
+uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen);
 
 /***************************************************************************//**
  * @name getTemperatureSi7021
@@ -51,5 +51,13 @@ uint8_t I2CTransfer(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen);
  * @return void
  ******************************************************************************/
 void getTemperatureSi7021();
+
+void powerOnSi7021();
+
+void waitConversionTimeSi7021();
+
+void readTemperatureSi7021();
+
+void reportTemperatureSi7021();
 
 #endif /* SRC_I2C_H_ */

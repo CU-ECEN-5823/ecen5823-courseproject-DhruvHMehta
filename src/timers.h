@@ -45,7 +45,7 @@ void LETIMER0Init();
 void LETIMER0InterruptEn();
 
 /***************************************************************************//**
- * @name timerWaitUs
+ * @name timerWaitUs_polled
  *
  * @brief
  *   Delays/Spins for the time specified in us_wait. Has upper and lower limit
@@ -55,6 +55,18 @@ void LETIMER0InterruptEn();
  *
  * @return void
  ******************************************************************************/
-void timerWaitUs(uint32_t us_wait);
+void timerWaitUs_polled(uint32_t us_wait);
+
+/***************************************************************************//**
+ * @name timerWaitUs_irq
+ *
+ * @brief
+ *   Non-blocking implementation of wait routine.
+ *
+ * @param[in] us_wait - Time to delay/wait
+ *
+ * @return void
+ ******************************************************************************/
+void timerWaitUs_irq(uint32_t us_wait);
 
 #endif /* SRC_TIMERS_H_ */
