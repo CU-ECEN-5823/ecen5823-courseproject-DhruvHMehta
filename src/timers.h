@@ -9,7 +9,6 @@
 #define SRC_TIMERS_H_
 
 #include "app.h"
-#include "EFR32BG13P632F512GM48.h"
 #include "em_letimer.h"
 
 
