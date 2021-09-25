@@ -49,20 +49,21 @@ void app_process_action()
       /* Go to sleep */
       break;
 
-    /* POWERUP State, check if the COMP1 event has occurred, send command */
+    /* POWERUP State, check if the COMP1 event has occurred, send command and change to EM1 */
     case POWERUP:
       if(evt == evtLETIMER0_COMP1)
         {
           currentste = MEASURE;
-          getTemperatureSi7021();
           sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+          getTemperatureSi7021();
         }
       break;
 
-    /* MEASURE State, check if the I2C0 event has occurred, wait for conversion */
+    /* MEASURE State, check if the I2C0 event has occurred, go to EM3 and wait for conversion */
     case MEASURE:
       if(evt == evtI2C0_Complete)
         {
+          /* Disable IRQ on successful transfer */
           I2CTransferReturnStatus = getI2CTransferReturn();
           if(I2CTransferReturnStatus == i2cTransferDone)
             NVIC_DisableIRQ(I2C0_IRQn);
@@ -74,17 +75,17 @@ void app_process_action()
         }
       break;
 
-    /* MEASURE State, check if the I2C0 event has occurred, wait for conversion */
+    /* WAIT State, check if the COMP1 event has occurred, go to EM1 and send read command */
     case WAIT:
       if(evt == evtLETIMER0_COMP1)
         {
           currentste = REPORT;
-          readTemperatureSi7021();
           sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+          readTemperatureSi7021();
         }
       break;
 
-      /* MEASURE State, check if the I2C0 event has occurred, wait for conversion */
+      /* REPORT State, check if the I2C0 event has occurred, go to EM3 and LOG Temperature */
       case REPORT:
         if(evt == evtI2C0_Complete)
           {

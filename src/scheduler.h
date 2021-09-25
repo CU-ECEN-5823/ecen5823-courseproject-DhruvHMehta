@@ -8,7 +8,6 @@
 #ifndef SRC_SCHEDULER_H_
 #define SRC_SCHEDULER_H_
 
-// Include in .c ?
 #include "em_core.h"
 #include "i2c.h"
 #include "app.h"

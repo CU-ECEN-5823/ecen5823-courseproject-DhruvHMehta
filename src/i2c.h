@@ -52,12 +52,52 @@ uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen
  ******************************************************************************/
 void getTemperatureSi7021();
 
+/***************************************************************************//**
+ * @name powerOnSi7021
+ *
+ * @brief
+ *   Power on the Si7021 sensor.
+ *
+ * @param[in] none
+ *
+ * @return void
+ ******************************************************************************/
 void powerOnSi7021();
 
+/***************************************************************************//**
+ * @name waitConversionTimeSi7021
+ *
+ * @brief
+ *   Wait for the Temperature conversion from the Si7021 sensor.
+ *
+ * @param[in] none
+ *
+ * @return void
+ ******************************************************************************/
 void waitConversionTimeSi7021();
 
+/***************************************************************************//**
+ * @name readTemperatureSi7021
+ *
+ * @brief
+ *   Sends the read command to the Si7021 sensor.
+ *
+ * @param[in] none
+ *
+ * @return void
+ ******************************************************************************/
 void readTemperatureSi7021();
 
+/***************************************************************************//**
+ * @name reportTemperatureSi7021
+ *
+ * @brief
+ *   Logs the temperature from the Si7021 sensor.
+ *
+ * @param[in] none
+ *
+ * @return void
+ ******************************************************************************/
 void reportTemperatureSi7021();
 
 #endif /* SRC_I2C_H_ */

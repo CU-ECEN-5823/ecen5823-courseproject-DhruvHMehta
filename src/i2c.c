@@ -43,6 +43,7 @@ uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen
 {
   I2C_TransferReturn_TypeDef I2CTransferReturn;
 
+  /* Fill the transfer sequence structure */
   TransferSeq.addr    = (SI_7021_I2CADDR << 1);
   TransferSeq.flags   = ReadWrite;
 
@@ -51,8 +52,10 @@ uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen
 
   NVIC_EnableIRQ(I2C0_IRQn);
 
+  /* Initialize a transfer */
   I2CTransferReturn = I2C_TransferInit(I2C0, &TransferSeq);
 
+  /* LOG an error if transfer failed */
   if(I2CTransferReturn < 0)
     {
       LOG_ERROR("I2C_TransferInit Failed. Error = %d\n\r", I2CTransferReturn);
@@ -62,23 +65,11 @@ uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen
   return 0;
 }
 
-/*
-static void sendReadCommandSi7021()
-{
-  I2CTransfer(&cmd_Tread, I2C_FLAG_WRITE, sizeof(cmd_Tread));
-}
-
-static void recvTempSi7021()
-{
-  I2CTransfer(&rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
-}
-*/
-
 void powerOnSi7021()
 {
   /* Turn on power to the sensor and wait for 100ms */
   sensorLPMControl(true);
-  timerWaitUs_irq(100*1000);
+  timerWaitUs_irq(85*1000);
 }
 
 void getTemperatureSi7021()
@@ -105,7 +96,7 @@ void readTemperatureSi7021()
   uint8_t ret_status;
 
   /* Receive the temperature data and check for error */
-  ret_status = I2CTransferInitWrapper(&rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
+  ret_status = I2CTransferInitWrapper(rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
   if(ret_status)
     {
       sensorLPMControl(false);

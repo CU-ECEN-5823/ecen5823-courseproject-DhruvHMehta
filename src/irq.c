@@ -54,7 +54,7 @@ void LETIMER0_IRQHandler()
       schedulerSetEvent_UF();
 
       /* 3 seconds have passed */
-      milliseconds += LETIMER_PERIOD_MS;
+      CORE_CRITICAL_SECTION(milliseconds += LETIMER_PERIOD_MS;);
     }
 
   /* Set the COMP1 Event */
@@ -67,6 +67,17 @@ void LETIMER0_IRQHandler()
   //sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM2);
 }
 
+/***************************************************************************//**
+ * @name I2C0_IRQHandler
+ *
+ * @brief
+ *   Interrupt handler which sets events based on the interrupt.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
 void I2C0_IRQHandler()
 {
 
@@ -82,7 +93,6 @@ void I2C0_IRQHandler()
 I2C_TransferReturn_TypeDef getI2CTransferReturn()
 {
   return I2CTransferReturn;
-  //CORE_CRITICAL_SECTION(return I2CTransferReturn;);
 }
 
 uint32_t letimerMilliseconds()
