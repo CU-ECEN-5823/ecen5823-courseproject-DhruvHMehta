@@ -26,7 +26,7 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
    ![duration_lpm_on](screenshots/assignment4/duration_lpm_on.PNG)  
 
 5. Compute what the total operating time of your design for assignment 4 would be in hours, assuming a 1000mAh battery power supply?  
-   Answer: Battery Life = Capacity/Current Consumption = 1000/0.0783 = 127713.92 hrs or approximately 14.5 years.
+   Answer: Battery Life = (Capacity/Current Consumption for 1 hr) = 1000/(0.00783 x 20 x 60) = 106.42 hrs.
    
 6. How has the power consumption performance of your design changed since the previous assignment?  
    Answer: Power consumption has decreased more than ten-fold since the design in the previous assignment. The average current consumption per period was 178.26 uA.  
