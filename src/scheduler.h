@@ -10,24 +10,24 @@
 
 #include "em_core.h"
 #include "i2c.h"
-#include "app.h"
 #include "irq.h"
+#include "sl_bt_api.h"
 
 /* Function Prototypes */
 
 /***************************************************************************//**
- * @name app_process_action
+ * @name temperatureStateMachine
  *
  * @brief Contains the scheduler for the events which gets the temperature
  *        when UF event occurs.
  *
- * @param[in] none
+ * @param[in] sl_bt_msg_t *evt
  *
  *
  * @return void
  ******************************************************************************/
 
-void app_process_action();
+void temperatureStateMachine(sl_bt_msg_t *evt);
 
 /***************************************************************************//**
  * @name schedulerSetEvent_UF

@@ -12,109 +12,92 @@
 enum States{IDLE, POWERUP, MEASURE, WAIT, REPORT};
 enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete};
 
-enum Events currentevt = evtNone;
 enum States currentste = IDLE;
 
-uint32_t getNextEvent()
+void temperatureStateMachine(sl_bt_msg_t *evt)
 {
-  uint32_t evt;
-
-  /* Get the current event status */
-  evt = currentevt;
-
-  /* Clear the current event */
-  CORE_CRITICAL_SECTION(currentevt = evtNone;);
-
-  return evt;
-}
-
-void app_process_action()
-{
-  uint32_t evt;
   I2C_TransferReturn_TypeDef I2CTransferReturnStatus;
 
-  /* Get the next event */
-  evt = getNextEvent();
+  if(SL_BT_MSG_ID(evt->header) == sl_bt_evt_system_external_signal_id)
+    {
+      /* Event handling */
+      switch(currentste)
+      {
+        /* IDLE State, check if UF event has occurred, power on Si7021 */
+        case IDLE:
+          if(evt->data.evt_system_external_signal.extsignals == evtLETIMER0_UF)
+            {
+              currentste = POWERUP;
+              powerOnSi7021();
+            }
+          /* Go to sleep */
+          break;
 
-  /* Event handling */
-  switch(currentste)
-  {
-    /* IDLE State, check if UF event has occurred, power on Si7021 */
-    case IDLE:
-      if(evt == evtLETIMER0_UF)
-        {
-          currentste = POWERUP;
-          powerOnSi7021();
-        }
-      /* Go to sleep */
-      break;
+        /* POWERUP State, check if the COMP1 event has occurred, send command and change to EM1 */
+        case POWERUP:
+          if(evt->data.evt_system_external_signal.extsignals == evtLETIMER0_COMP1)
+            {
+              currentste = MEASURE;
+              sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+              getTemperatureSi7021();
+            }
+          break;
 
-    /* POWERUP State, check if the COMP1 event has occurred, send command and change to EM1 */
-    case POWERUP:
-      if(evt == evtLETIMER0_COMP1)
-        {
-          currentste = MEASURE;
-          sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
-          getTemperatureSi7021();
-        }
-      break;
+        /* MEASURE State, check if the I2C0 event has occurred, go to EM3 and wait for conversion */
+        case MEASURE:
+          if(evt->data.evt_system_external_signal.extsignals == evtI2C0_Complete)
+            {
+              /* Disable IRQ on successful transfer */
+              I2CTransferReturnStatus = getI2CTransferReturn();
+              if(I2CTransferReturnStatus == i2cTransferDone)
+                NVIC_DisableIRQ(I2C0_IRQn);
 
-    /* MEASURE State, check if the I2C0 event has occurred, go to EM3 and wait for conversion */
-    case MEASURE:
-      if(evt == evtI2C0_Complete)
-        {
-          /* Disable IRQ on successful transfer */
-          I2CTransferReturnStatus = getI2CTransferReturn();
-          if(I2CTransferReturnStatus == i2cTransferDone)
-            NVIC_DisableIRQ(I2C0_IRQn);
+              sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 
-          sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
+              currentste = WAIT;
+              waitConversionTimeSi7021();
+            }
+          break;
 
-          currentste = WAIT;
-          waitConversionTimeSi7021();
-        }
-      break;
+        /* WAIT State, check if the COMP1 event has occurred, go to EM1 and send read command */
+        case WAIT:
+          if(evt->data.evt_system_external_signal.extsignals == evtLETIMER0_COMP1)
+            {
+              currentste = REPORT;
+              sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
+              readTemperatureSi7021();
+            }
+          break;
 
-    /* WAIT State, check if the COMP1 event has occurred, go to EM1 and send read command */
-    case WAIT:
-      if(evt == evtLETIMER0_COMP1)
-        {
-          currentste = REPORT;
-          sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
-          readTemperatureSi7021();
-        }
-      break;
+          /* REPORT State, check if the I2C0 event has occurred, go to EM3 and LOG Temperature */
+          case REPORT:
+            if(evt->data.evt_system_external_signal.extsignals == evtI2C0_Complete)
+              {
+                I2CTransferReturnStatus = getI2CTransferReturn();
+                if(I2CTransferReturnStatus == i2cTransferDone)
+                  NVIC_DisableIRQ(I2C0_IRQn);
 
-      /* REPORT State, check if the I2C0 event has occurred, go to EM3 and LOG Temperature */
-      case REPORT:
-        if(evt == evtI2C0_Complete)
-          {
-            I2CTransferReturnStatus = getI2CTransferReturn();
-            if(I2CTransferReturnStatus == i2cTransferDone)
-              NVIC_DisableIRQ(I2C0_IRQn);
+                sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 
-            sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
-
-            currentste = IDLE;
-            reportTemperatureSi7021();
-          }
-        break;
-
-  }
-
+                currentste = IDLE;
+                reportTemperatureSi7021();
+              }
+            break;
+      }
+    }
 }
 
 void schedulerSetEvent_UF()
 {
-  CORE_CRITICAL_SECTION(currentevt = evtLETIMER0_UF;);
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtLETIMER0_UF););
 }
 
 void schedulerSetEvent_COMP1()
 {
-  CORE_CRITICAL_SECTION(currentevt = evtLETIMER0_COMP1;);
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtLETIMER0_COMP1););
 }
 
 void schedulerSetEvent_I2Cdone()
 {
-  CORE_CRITICAL_SECTION(currentevt = evtI2C0_Complete;);
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtI2C0_Complete););
 }

@@ -53,6 +53,8 @@
 #include "src/oscillators.h"
 #include "src/timers.h"
 #include "src/i2c.h"
+#include "src/scheduler.h"
+#include "src/ble.h"
 
 /* Macros for Energy Modes */
 #define EM0 0 /* Run */
@@ -61,7 +63,7 @@
 #define EM3 3 /* Stop */
 
 /* Energy Mode Select and LED Timing */
-#define LOWEST_ENERGY_MODE  EM3
+#define LOWEST_ENERGY_MODE  EM2
 #define LETIMER_ON_TIME_MS  175
 #define LETIMER_PERIOD_MS   3000
 

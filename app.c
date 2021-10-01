@@ -128,20 +128,14 @@ SL_WEAK void app_process_action(void)
  *****************************************************************************/
 void sl_bt_on_event(sl_bt_msg_t *evt)
 {
-  
-  // Just a trick to hide a compiler warning about unused input parameter evt.
-  // We will add real functionality here later.
-  if (evt->header) {
-      printf(".\n");
-  }
 
   // Some events require responses from our application code,
   // and don’t necessarily advance our state machines.
   // For assignment 5 uncomment the next 2 function calls
-  // handle_ble_event(evt); // put this code in ble.c/.h
+   handle_ble_event(evt); // put this code in ble.c/.h
 
   // sequence through states driven by events
-  // state_machine(evt);    // put this code in scheduler.c/.h
+   temperatureStateMachine(evt);    // put this code in scheduler.c/.h
   
   
    
