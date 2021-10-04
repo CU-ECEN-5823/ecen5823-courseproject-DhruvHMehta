@@ -6,25 +6,25 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
 *Please include screenshots of the profiler window detailing each current measurement captured.  See the file Instructions to add screenshots in assignment.docx in the ECEN 5823 Student Public Folder.*
 
 1. Provide screen shot verifying the Advertising period matches the values required for the assignment.
-   <br>Screenshot:  
+   <br>Screenshot:  253.50mS.
    ![advertising_period](screenshots/assignment5/advertising_period.png)  
 
 2. What is the average current between advertisements?
-   Answer:
+   Answer: 1.64uA.
    <br>Screenshot:  
    ![avg_current_between_advertisements](screenshots/assignment5/avg_current_between_advertisements.png)  
 
 3. What is the peak current of an advertisement? 
-   Answer:
+   Answer: 28.13mA.
    <br>Screenshot:  
    ![peak_current_of_advertisement](screenshots/assignment5/peak_current_of_advertisement.png)  
 
 4. Provide screen shot showing the connection interval settings. Do they match the values you set in your slave(server) code or the master's(client) values?.
-   <br>Screenshot: 
+   <br>Screenshot: 45mS. They do not match as the EFR Connect Client App does not honor the connection parameter settings requested by the Gecko.
    ![connection_interval](screenshots/assignment5/connection_interval.png)  
 
 5. What is the average current between connection intervals?
-   Answer:
+   Answer: 924.19nA.
    <br>Screenshot:  
    ![avg_current_between_connection_intervals](screenshots/assignment5/avg_current_between_connection_intervals.png)  
 
@@ -33,12 +33,12 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
    ![slave_latency](screenshots/assignment5/slave_latency.png)  
 
 7. What is the peak current of a data transmission when the phone is connected and placed next to the Blue Gecko? 
-   Answer:
+   Answer: 21.94mA.
    <br>Screenshot:  
    ![peak_current_phone_next_to](screenshots/assignment5/peak_current_phone_next_to.png)  
    
 8. What is the peak current of a data transmission when the phone is connected and placed approximately 20 feet away from the Blue Gecko? 
-   Answer:
+   Answer: 27.81mA.
    <br>Screenshot:  
    ![peak_current_phone_20ft_away](screenshots/assignment5/peak_current_phone_20ft_away.png)  
    

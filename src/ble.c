@@ -25,7 +25,7 @@ ble_data_struct_t* getBleDataPtr()
 
 void handle_ble_event(sl_bt_msg_t *evt)
 {
-  sl_status_t sc;
+    sl_status_t sc;
     uint8_t address_type;
 
     // Handle stack events
@@ -33,20 +33,26 @@ void handle_ble_event(sl_bt_msg_t *evt)
       // -------------------------------
       // This event indicates the device has started and the radio is ready.
       // Do not call any stack command before receiving this boot event!
-
       /* Boot Event */
       case sl_bt_evt_system_boot_id:
         // Print boot message.
+
+        /*
         LOG_INFO("Bluetooth stack booted: v%d.%d.%d-b%d\r\n",
                      evt->data.evt_system_boot.major,
                      evt->data.evt_system_boot.minor,
                      evt->data.evt_system_boot.patch,
                      evt->data.evt_system_boot.build);
-
+        */
         // Extract unique ID from BT Address.
         sc = sl_bt_system_get_identity_address(&ble_data.myAddress, &address_type);
-        app_assert_status(sc);
 
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_system_get_identity_address() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        /*
         LOG_INFO("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
                      address_type ? "static random" : "public device",
                      ble_data.myAddress.addr[5],
@@ -55,10 +61,15 @@ void handle_ble_event(sl_bt_msg_t *evt)
                      ble_data.myAddress.addr[2],
                      ble_data.myAddress.addr[1],
                      ble_data.myAddress.addr[0]);
+         */
 
         // Create an advertising set.
         sc = sl_bt_advertiser_create_set(&(ble_data.advertisingSetHandle));
-        app_assert_status(sc);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_advertiser_create_set() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
 
         // Set advertising interval to 250ms.
         sc = sl_bt_advertiser_set_timing(
@@ -67,37 +78,43 @@ void handle_ble_event(sl_bt_msg_t *evt)
           400, // max. adv. interval (milliseconds * 1.6)
           0,   // adv. duration
           0);  // max. num. adv. events
-        app_assert_status(sc);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_advertiser_set_timing() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
 
         // Start general advertising and enable connections.
         sc = sl_bt_advertiser_start(
           ble_data.advertisingSetHandle,
           sl_bt_advertiser_general_discoverable,
           sl_bt_advertiser_connectable_scannable);
-        app_assert_status(sc);
-        LOG_INFO("Started advertising\r\n");
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_advertiser_set_timing() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        //LOG_INFO("Started advertising\r\n");
         break;
 
       // -------------------------------
       // This event indicates that a new connection was opened.
-
       /* Connection Opened Event */
       case sl_bt_evt_connection_opened_id:
-        LOG_INFO("Connection opened\r\n");
+        //LOG_INFO("Connection opened\r\n");
         sl_bt_advertiser_stop(ble_data.advertisingSetHandle);
-        sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 4, 75, 0xFFFF, 0xFFFF);
-
+        sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 4, 75, 0, 0xFFFF);
         break;
 
       // -------------------------------
       // This event indicates that a connection was closed.
-
       /* Connection Close Event */
       case sl_bt_evt_connection_closed_id:
 
         ble_data.gatt_server_connection = 0;
 
-        LOG_INFO("Connection closed\r\n");
+        //LOG_INFO("Connection closed\r\n");
 
         // Restart advertising after client has disconnected.
         sc = sl_bt_advertiser_start(
@@ -105,26 +122,32 @@ void handle_ble_event(sl_bt_msg_t *evt)
           sl_bt_advertiser_general_discoverable,
           sl_bt_advertiser_connectable_scannable);
 
-        app_assert_status(sc);
-        LOG_INFO("Started advertising\r\n");
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_advertiser_start() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        //LOG_INFO("Started advertising\r\n");
         break;
 
       /* Connnection Parameters Event */
       case sl_bt_evt_connection_parameters_id:
+
         LOG_INFO("Interval = %d\r\n Latency = %d\r\n Timeout = %d\r\n",
                   evt->data.evt_connection_parameters.interval,
                   evt->data.evt_connection_parameters.latency,
                   evt->data.evt_connection_parameters.timeout);
+
         break;
 
 
       /* GATT Server Characteristic Status ID Event */
       case sl_bt_evt_gatt_server_characteristic_status_id:
-
+/*
         LOG_INFO("status flag = %d\r\n client conf flags = %d\r\n",
                  evt->data.evt_gatt_server_characteristic_status.status_flags,
                  evt->data.evt_gatt_server_characteristic_status.client_config_flags);
-
+*/
    if  (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
     {
       ble_data.gatt_server_connection = evt->data.evt_gatt_server_characteristic_status.connection;
@@ -169,7 +192,7 @@ void SendTemperature(float Temperature)
 
   // "bitstream" refers to the order of bytes and bits sent. byte[0] is sent first, followed by byte[1]...
 
-
+  /* Write attribute and send indications only if indications are enabled and connection is maintained */
   if(ble_data.readTemperature == 1 && ble_data.gatt_server_connection != 0)
     {
       UINT8_TO_BITSTREAM(p, flags); // put the flags byte in first, "convert" is a strong word, it places the byte into the buffer
@@ -186,8 +209,6 @@ void SendTemperature(float Temperature)
           &htm_temperature_buffer[0]      // pointer to buffer where data is
       );
 
-      //app_assert_status(sc);
-
       if (sc != SL_STATUS_OK)
         {
           LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x", (unsigned int) sc);
@@ -197,7 +218,6 @@ void SendTemperature(float Temperature)
                                              gattdb_temperature_measurement,
                                              5,
                                              htm_temperature_buffer);
-      //app_assert_status(sc);
 
       if (sc != SL_STATUS_OK)
         {
