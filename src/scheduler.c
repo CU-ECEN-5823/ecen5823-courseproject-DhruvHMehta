@@ -79,8 +79,9 @@ void temperatureStateMachine(sl_bt_msg_t *evt)
 
                 sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 
+                  reportTemperatureSi7021();
+
                 currentste = IDLE;
-                reportTemperatureSi7021();
               }
             break;
       }

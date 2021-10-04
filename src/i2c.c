@@ -12,7 +12,6 @@
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
-
 #define SI_7021_I2CADDR 0x40
 #define SI_7021_TREAD   0xF3
 
@@ -105,17 +104,19 @@ void readTemperatureSi7021()
 }
 void reportTemperatureSi7021()
 {
-  int Calc_Temp;
+  float Calc_Temp;
   uint16_t Read_Temp;
 
   /* Arrange MSB and LSB into Read_Temp variable */
   Read_Temp = ((rx_Temp[0] << 8) | rx_Temp[1]);
 
   /* Convert received value to degrees Celsius and log */
-  Calc_Temp = (175 * Read_Temp)/65536 - 47;
-  LOG_INFO("Temperature = %dC\n\r", Calc_Temp);
+  Calc_Temp = (175.72 * Read_Temp)/65536 - 46.85;
+  LOG_INFO("Temperature = %fC\n\r", Calc_Temp);
 
   /* Turn off power to the sensor */
   sensorLPMControl(false);
+
+  SendTemperature(Calc_Temp);
 
 }

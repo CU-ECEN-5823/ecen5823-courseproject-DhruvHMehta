@@ -12,6 +12,8 @@
 #include "em_i2c.h"
 #include "gpio.h"
 #include "timers.h"
+#include "ble.h"
+
 
 /***************************************************************************//**
  * @name I2C_Init
