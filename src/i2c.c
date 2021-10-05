@@ -68,7 +68,7 @@ void powerOnSi7021()
 {
   /* Turn on power to the sensor and wait for 100ms */
   sensorLPMControl(true);
-  timerWaitUs_irq(85*1000);
+  timerWaitUs_irq(80*1000);
 }
 
 void getTemperatureSi7021()
@@ -86,8 +86,8 @@ void getTemperatureSi7021()
 
 void waitConversionTimeSi7021()
 {
-  /* Wait for 15ms for the sensor to get the data */
-  timerWaitUs_irq(15*1000);
+  /* Wait for 11ms for the sensor to get the data */
+  timerWaitUs_irq(11*1000);
 }
 
 void readTemperatureSi7021()

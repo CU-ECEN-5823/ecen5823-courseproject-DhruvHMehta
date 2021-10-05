@@ -10,7 +10,7 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
    ![advertising_period](screenshots/assignment5/advertising_period.PNG)  
 
 2. What is the average current between advertisements?
-   Answer: 1.64uA.
+   Answer: 3.06uA.
    <br>Screenshot:  
    ![avg_current_between_advertisements](screenshots/assignment5/avg_current_between_advertisements.PNG)  
 
@@ -20,16 +20,17 @@ See [Mastering Markdown](https://guides.github.com/features/mastering-markdown/)
    ![peak_current_of_advertisement](screenshots/assignment5/peak_current_of_advertisement.PNG)  
 
 4. Provide screen shot showing the connection interval settings. Do they match the values you set in your slave(server) code or the master's(client) values?.
-   <br>Screenshot: 45mS. They do not match as the EFR Connect Client App does not honor the connection parameter settings requested by the Gecko.
+   <br>Screenshot: 298mS. Yes, they do match as the Client acknowledges the connection parameters required by the Server. (300mS is the slave latency and most 
+   connection events are observed to occur at this time period. Occaisionally, the connection interval is noted to be 75mS.
    ![connection_interval](screenshots/assignment5/connection_interval.PNG)  
 
 5. What is the average current between connection intervals?
-   Answer: 924.19nA.
+   Answer: 3.46uA.
    <br>Screenshot:  
    ![avg_current_between_connection_intervals](screenshots/assignment5/avg_current_between_connection_intervals.PNG)  
 
 6. If possible, provide screen shot verifying the slave latency matches what was reported when you logged the values from event = gecko_evt_le_connection_parameters_id. 
-   <br>Screenshot:  
+   <br>Screenshot:  Please refer to the last value in the screenshot. (Latency = 3 = 300mS)
    ![slave_latency](screenshots/assignment5/slave_latency.PNG)  
 
 7. What is the peak current of a data transmission when the phone is connected and placed next to the Blue Gecko? 

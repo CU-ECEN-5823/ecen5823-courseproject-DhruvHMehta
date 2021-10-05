@@ -103,8 +103,15 @@ void handle_ble_event(sl_bt_msg_t *evt)
       /* Connection Opened Event */
       case sl_bt_evt_connection_opened_id:
         //LOG_INFO("Connection opened\r\n");
+
+        /* Stop advertising */
         sl_bt_advertiser_stop(ble_data.advertisingSetHandle);
-        sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 4, 75, 0, 0xFFFF);
+
+        /* Get the connection handle */
+        ble_data.gatt_server_connection = evt->data.evt_connection_opened.connection;
+
+        /* Set the connection parameters */
+        sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 3, 75, 0, 0xFFFF);
         break;
 
       // -------------------------------
@@ -112,7 +119,9 @@ void handle_ble_event(sl_bt_msg_t *evt)
       /* Connection Close Event */
       case sl_bt_evt_connection_closed_id:
 
+        /* Reset the connection handle and the indication bool */
         ble_data.gatt_server_connection = 0;
+        ble_data.readTemperature = 0;
 
         //LOG_INFO("Connection closed\r\n");
 
@@ -134,9 +143,9 @@ void handle_ble_event(sl_bt_msg_t *evt)
       case sl_bt_evt_connection_parameters_id:
 
         LOG_INFO("Interval = %d\r\n Latency = %d\r\n Timeout = %d\r\n",
-                  evt->data.evt_connection_parameters.interval,
-                  evt->data.evt_connection_parameters.latency,
-                  evt->data.evt_connection_parameters.timeout);
+                  (int)((evt->data.evt_connection_parameters.interval)*1.25),
+                  (int)(evt->data.evt_connection_parameters.latency),
+                  (int)((evt->data.evt_connection_parameters.timeout)*10));
 
         break;
 
@@ -150,18 +159,19 @@ void handle_ble_event(sl_bt_msg_t *evt)
 */
    if  (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
     {
-      ble_data.gatt_server_connection = evt->data.evt_gatt_server_characteristic_status.connection;
+      //ble_data.gatt_server_connection = evt->data.evt_gatt_server_characteristic_status.connection;
 
       if( evt->data.evt_gatt_server_characteristic_status.status_flags == 1 && \
-          evt->data.evt_gatt_server_characteristic_status.client_config_flags == 2)
+          evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_indication)
         {
           /* Start reading temperature */
           ble_data.readTemperature = 1;
         }
 
       /* Indications have been turned off */
-      else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0)
-                ble_data.readTemperature = 0;
+      else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_disable)
+                ble_data.readTemperature = 0
+                ;
     }
         break;
 
