@@ -11,4 +11,4 @@ Assignment files to implement a Health Thermometer BLE Profile which interacts w
 Displays the temperature on the Gecko's LCD.
 
 ## Assignment Questions
-The client command table can be found in the [Assignment6-ClientCommandTableForA7](https://github.com/CU-ECEN-5823/ecen5823-assignment6-DhruvHMehta/blob/main/questions/Assignment6-ClientCommandTableForA7.md) file. 
+The client command table can be found in the [Assignment6-ClientCommandTableForA7](https://github.com/CU-ECEN-5823/ecen5823-assignment6-DhruvHMehta/blob/main/questions/Assignment6-ClientCommandTableForA7.xlsx) file. 
