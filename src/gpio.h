@@ -30,6 +30,8 @@
 #define I2C0_SDA   11
 #define SENS_port  gpioPortD
 #define SENS_EN    15
+#define DISP_port  gpioPortD
+#define DISP_EN    13
 
 
 // Function prototypes
@@ -38,7 +40,7 @@ void gpioLed0SetOn();
 void gpioLed0SetOff();
 void gpioLed1SetOn();
 void gpioLed1SetOff();
-void sensorLPMControl(bool OnOff);
-
+void gpioSensorEnSetOn();
+void  gpioSetDisplayExtcomin(bool value);
 
 #endif /* SRC_GPIO_H_ */

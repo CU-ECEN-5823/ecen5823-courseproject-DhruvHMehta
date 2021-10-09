@@ -31,22 +31,15 @@ void gpioInit()
   //GPIO_PinModeSet(I2C0_port, I2C0_SCL, gpioModePushPull, false);
   //GPIO_PinModeSet(I2C0_port, I2C0_SDA, gpioModePushPull, false);
   GPIO_PinModeSet(SENS_port, SENS_EN, gpioModePushPull, false);
+  GPIO_PinModeSet(DISP_port, DISP_EN, gpioModePushPull, false);
 
 
 } // gpioInit()
 
 
-void sensorLPMControl(bool OnOff)
+void gpioSensorEnSetOn()
 {
-  if(OnOff == true)
-    {
-      GPIO_PinOutSet(SENS_port, SENS_EN);
-    }
-
-  else if(OnOff == false)
-    {
-      GPIO_PinOutClear(SENS_port, SENS_EN);
-    }
+  GPIO_PinOutSet(SENS_port, SENS_EN);
 }
 
 void gpioLed0SetOn()
@@ -72,7 +65,18 @@ void gpioLed1SetOff()
 	GPIO_PinOutClear(LED1_port,LED1_pin);
 }
 
+void  gpioSetDisplayExtcomin(bool value)
+{
+  if(value == true)
+    {
+      GPIO_PinOutSet(DISP_port, DISP_EN);
+    }
 
+  else if(value == false)
+    {
+      GPIO_PinOutClear(DISP_port, DISP_EN);
+    }
+}
 
 
 

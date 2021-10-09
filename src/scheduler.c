@@ -24,7 +24,7 @@ void temperatureStateMachine(sl_bt_msg_t *evt)
    * There is an approx 100ms time period during which a bug could arise if the connection
    * is lost when the below state machine runs. However, this was not produceable in testing */
 
-  if((ble_data->gatt_server_connection != 0 && ble_data->readTemperature != 0) && \
+  if((ble_data->gatt_server_connection != 0 && ble_data->htm_indications_enabled != 0) && \
       (SL_BT_MSG_ID(evt->header) == sl_bt_evt_system_external_signal_id))
     {
       /* Event handling */

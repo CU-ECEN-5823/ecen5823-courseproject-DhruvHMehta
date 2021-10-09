@@ -15,7 +15,7 @@
 #include "src/log.h"
 
 // The advertising set handle allocated from Bluetooth stack.
-static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .readTemperature = 0, \
+static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indications_enabled = 0, \
                                      .gatt_server_connection = 0};
 
 ble_data_struct_t* getBleDataPtr()
@@ -96,6 +96,18 @@ void handle_ble_event(sl_bt_msg_t *evt)
           }
 
         //LOG_INFO("Started advertising\r\n");
+
+        // Initializing the display and printing my BT Address
+        displayInit();
+        displayPrintf(DISPLAY_ROW_NAME, BLE_DEVICE_TYPE_STRING);
+        displayPrintf(DISPLAY_ROW_BTADDR, "%02X:%02X:%02X:%02X:%02X:%02X", ble_data.myAddress.addr[0], \
+                      ble_data.myAddress.addr[1], ble_data.myAddress.addr[2], \
+                      ble_data.myAddress.addr[3], ble_data.myAddress.addr[4], \
+                      ble_data.myAddress.addr[5]);
+
+        displayPrintf(DISPLAY_ROW_ASSIGNMENT, "A6");
+        displayPrintf(DISPLAY_ROW_CONNECTION, "Advertising");
+
         break;
 
       // -------------------------------
@@ -105,13 +117,27 @@ void handle_ble_event(sl_bt_msg_t *evt)
         //LOG_INFO("Connection opened\r\n");
 
         /* Stop advertising */
-        sl_bt_advertiser_stop(ble_data.advertisingSetHandle);
+        sc = sl_bt_advertiser_stop(ble_data.advertisingSetHandle);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_advertiser_stop() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
 
         /* Get the connection handle */
         ble_data.gatt_server_connection = evt->data.evt_connection_opened.connection;
 
         /* Set the connection parameters */
-        sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 3, 75, 0, 0xFFFF);
+        sc = sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 3, 75, 0, 0xFFFF);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_connection_set_parameters() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        /* Display Connected on the LCD */
+        displayPrintf(DISPLAY_ROW_CONNECTION, "Connected");
+
         break;
 
       // -------------------------------
@@ -121,7 +147,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
 
         /* Reset the connection handle and the indication bool */
         ble_data.gatt_server_connection = 0;
-        ble_data.readTemperature = 0;
+        ble_data.htm_indications_enabled = 0;
 
         //LOG_INFO("Connection closed\r\n");
 
@@ -137,6 +163,12 @@ void handle_ble_event(sl_bt_msg_t *evt)
           }
 
         //LOG_INFO("Started advertising\r\n");
+
+        displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
+
+        /* Display Advertising on the LCD */
+        displayPrintf(DISPLAY_ROW_CONNECTION, "Advertising");
+
         break;
 
       /* Connnection Parameters Event */
@@ -148,6 +180,14 @@ void handle_ble_event(sl_bt_msg_t *evt)
                   (int)((evt->data.evt_connection_parameters.timeout)*10));
 
         break;
+
+      /* 1s Timer event for LCD EXTcomin */
+      case sl_bt_evt_system_soft_timer_id:
+
+        displayUpdate();
+
+        break;
+
 
 
       /* GATT Server Characteristic Status ID Event */
@@ -165,13 +205,15 @@ void handle_ble_event(sl_bt_msg_t *evt)
           evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_indication)
         {
           /* Start reading temperature */
-          ble_data.readTemperature = 1;
+          ble_data.htm_indications_enabled = 1;
         }
 
       /* Indications have been turned off */
       else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_disable)
-                ble_data.readTemperature = 0
-                ;
+        {
+            displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
+            ble_data.htm_indications_enabled = 0;
+        }
     }
         break;
 
@@ -203,7 +245,7 @@ void SendTemperature(float Temperature)
   // "bitstream" refers to the order of bytes and bits sent. byte[0] is sent first, followed by byte[1]...
 
   /* Write attribute and send indications only if indications are enabled and connection is maintained */
-  if(ble_data.readTemperature == 1 && ble_data.gatt_server_connection != 0)
+  if(ble_data.htm_indications_enabled == 1 && ble_data.gatt_server_connection != 0)
     {
       UINT8_TO_BITSTREAM(p, flags); // put the flags byte in first, "convert" is a strong word, it places the byte into the buffer
 
@@ -233,6 +275,9 @@ void SendTemperature(float Temperature)
         {
           LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x", (unsigned int) sc);
         }
+
+      /* Update Temperature on the LCD */
+      displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", (int) Temperature);
 
     }
 }

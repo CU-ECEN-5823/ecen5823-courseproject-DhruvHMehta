@@ -67,7 +67,7 @@ uint8_t I2CTransferInitWrapper(uint8_t* Data, uint8_t ReadWrite, uint8_t DataLen
 void powerOnSi7021()
 {
   /* Turn on power to the sensor and wait for 100ms */
-  sensorLPMControl(true);
+  //sensorLPMControl(true);
   timerWaitUs_irq(80*1000);
 }
 
@@ -79,7 +79,7 @@ void getTemperatureSi7021()
   ret_status = I2CTransferInitWrapper(&cmd_Tread, I2C_FLAG_WRITE, sizeof(cmd_Tread));
   if(ret_status)
     {
-      sensorLPMControl(false);
+     //sensorLPMControl(false);
       return;
     }
 }
@@ -98,7 +98,7 @@ void readTemperatureSi7021()
   ret_status = I2CTransferInitWrapper(rx_Temp, I2C_FLAG_READ, sizeof(rx_Temp));
   if(ret_status)
     {
-      sensorLPMControl(false);
+      //sensorLPMControl(false);
       return;
     }
 }
@@ -115,7 +115,7 @@ void reportTemperatureSi7021()
   LOG_INFO("Temperature = %fC\n\r", Calc_Temp);
 
   /* Turn off power to the sensor */
-  sensorLPMControl(false);
+  //sensorLPMControl(false);
 
   SendTemperature(Calc_Temp);
 

@@ -10,6 +10,8 @@
 
 #include "sl_bt_api.h"
 #include "gatt_db.h"
+#include "lcd.h"
+#include "ble_device_type.h"
 
 /* Macro Definitions */
 #define UINT8_TO_BITSTREAM(p, n)      { *(p)++ = (uint8_t)(n); }
@@ -23,7 +25,7 @@ typedef struct
 {
    bd_addr myAddress;
    uint8_t advertisingSetHandle;
-   uint8_t readTemperature;
+   uint8_t htm_indications_enabled;
    uint8_t gatt_server_connection;
 }ble_data_struct_t;
 
