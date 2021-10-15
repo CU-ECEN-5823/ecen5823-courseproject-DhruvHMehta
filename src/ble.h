@@ -40,6 +40,7 @@ typedef struct
    uint8_t thermo_char[2];          /* Thermometer Measurement Characteristic UUID */
    uint32_t serviceHandle;          /* Service Handle */
    uint8_t characteristicHandle;    /* Characteristic Handle */
+   bd_addr serverAddress;           /* Hard-coded address of server */
    uint8_t discoveryEvt;            /* Event in Discovery State Machine */
 }ble_data_struct_t;
 #endif

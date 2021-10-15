@@ -17,7 +17,7 @@ enum States{IDLE, POWERUP, MEASURE, WAIT, REPORT};
 enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete};
 enum States currentste = IDLE;
 #else
-enum States{OPEN, CHARACTERISTICS, NOTIFY, DATA};
+enum States{OPEN, CHARACTERISTICS, NOTIFY, CLOSE};
 enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed};
 enum States currentste = OPEN;
 #endif
@@ -165,12 +165,12 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                 }
 
-              currentste = DATA;
+              currentste = CLOSE;
             }
         break;
 
         /* Data State, check if the data is received, print it on the display */
-      case DATA:
+      case CLOSE:
         if(ble_data->discoveryEvt == evtConnectionClosed)
           {
             currentste = OPEN;
