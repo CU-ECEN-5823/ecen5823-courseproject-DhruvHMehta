@@ -21,13 +21,28 @@
 
 #define UINT32_TO_FLOAT(m, e)         (((uint32_t)(m) & 0x00FFFFFFU) | (uint32_t)((int32_t)(e) << 24))
 
+
+#if DEVICE_IS_BLE_SERVER
 typedef struct
 {
-   bd_addr myAddress;
-   uint8_t advertisingSetHandle;
-   uint8_t htm_indications_enabled;
-   uint8_t gatt_server_connection;
+   bd_addr myAddress;               /* Own Address */
+   uint8_t advertisingSetHandle;    /* Advertising Handle */
+   uint8_t htm_indications_enabled; /* Health Thermometer Indications enabled bool */
+   uint8_t gatt_server_connection;  /* Connection Handle */
 }ble_data_struct_t;
+#else
+typedef struct
+{
+   bd_addr myAddress;               /* Own Address */
+   uint8_t htm_indications_enabled; /* Health Thermometer Indications enabled bool */
+   uint8_t gatt_server_connection;  /* Connection Handle */
+   uint8_t thermo_service[2];       /* Thermometer Service UUID */
+   uint8_t thermo_char[2];          /* Thermometer Measurement Characteristic UUID */
+   uint32_t serviceHandle;          /* Service Handle */
+   uint8_t characteristicHandle;    /* Characteristic Handle */
+   uint8_t discoveryEvt;            /* Event in Discovery State Machine */
+}ble_data_struct_t;
+#endif
 
 /* Function Prototypes */
 

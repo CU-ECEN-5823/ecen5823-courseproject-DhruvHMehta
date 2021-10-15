@@ -8,12 +8,21 @@
  */
 
 #include "scheduler.h"
+#define INCLUDE_LOG_DEBUG 1
+#include "src/log.h"
 
+
+#if DEVICE_IS_BLE_SERVER
 enum States{IDLE, POWERUP, MEASURE, WAIT, REPORT};
 enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete};
-
 enum States currentste = IDLE;
+#else
+enum States{OPEN, CHARACTERISTICS, NOTIFY, DATA};
+enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed};
+enum States currentste = OPEN;
+#endif
 
+#if DEVICE_IS_BLE_SERVER
 void temperatureStateMachine(sl_bt_msg_t *evt)
 {
   /* Variables for I2C Return Check and BLE Data */
@@ -95,6 +104,87 @@ void temperatureStateMachine(sl_bt_msg_t *evt)
     }
 }
 
+#else
+void discovery_state_machine(sl_bt_msg_t *evt)
+{
+  /* Get the ble data */
+  ble_data_struct_t* ble_data = getBleDataPtr();
+  int sc;
+
+    /* Event handling */
+    switch(currentste)
+    {
+      /* OPEN State, check if Connection open event has occurred, get the Services */
+      case OPEN:
+        if(ble_data->discoveryEvt == evtOpenConnection)
+          {
+
+            /* Discover the primary services */
+            sc = sl_bt_gatt_discover_primary_services_by_uuid(ble_data->gatt_server_connection,
+                                                              sizeof(ble_data->thermo_service),
+                                                              ble_data->thermo_service);
+
+            if (sc != SL_STATUS_OK)
+              {
+                LOG_ERROR("sl_bt_gatt_discover_primary_services_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+              }
+
+            currentste = CHARACTERISTICS;
+          }
+        break;
+
+        /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
+      case CHARACTERISTICS:
+        if(ble_data->discoveryEvt == evtGATTComplete)
+            {
+              /* Discover the characteristics in the HTM Service */
+              sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
+                                                          ble_data->serviceHandle,
+                                                          sizeof(ble_data->thermo_char),
+                                                          ble_data->thermo_char);
+              if (sc != SL_STATUS_OK)
+                {
+                  LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                }
+
+              currentste = NOTIFY;
+            }
+        break;
+
+        /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
+      case NOTIFY:
+        if(ble_data->discoveryEvt == evtGATTComplete)
+            {
+              /* Enable indications for the HTM Thermometer Measurement Characteristic */
+              sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
+                                                              ble_data->characteristicHandle,
+                                                              sl_bt_gatt_indication);
+
+              if (sc != SL_STATUS_OK)
+                {
+                  LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                }
+
+              currentste = DATA;
+            }
+        break;
+
+        /* Data State, check if the data is received, print it on the display */
+      case DATA:
+        if(ble_data->discoveryEvt == evtConnectionClosed)
+          {
+            currentste = OPEN;
+          }
+        break;
+    }
+
+    /* Make sure the event is cleared */
+    ble_data->discoveryEvt = evtNone;
+}
+#endif
+
+#if DEVICE_IS_BLE_SERVER
+/* Events for Temperature State Machine */
 void schedulerSetEvent_UF()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtLETIMER0_UF););
@@ -109,3 +199,4 @@ void schedulerSetEvent_I2Cdone()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtI2C0_Complete););
 }
+#endif

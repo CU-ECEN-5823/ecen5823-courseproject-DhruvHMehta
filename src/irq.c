@@ -27,6 +27,7 @@ I2C_TransferReturn_TypeDef I2CTransferReturn;
 /* Keeps count of time passed since the system startup */
 static uint32_t milliseconds;
 
+
 /***************************************************************************//**
  * @name LETIMER0_IRQHandler
  *
@@ -40,7 +41,6 @@ static uint32_t milliseconds;
  ******************************************************************************/
 void LETIMER0_IRQHandler()
 {
-  //sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM2);
 
   /* Check which IF is set */
   uint32_t flags = LETIMER_IntGetEnabled(LETIMER0);
@@ -51,22 +51,24 @@ void LETIMER0_IRQHandler()
   /* Set the UF Event */
   if(flags == LETIMER_IEN_UF)
     {
+#if DEVICE_IS_BLE_SERVER
       schedulerSetEvent_UF();
-
+#endif
       /* 3 seconds have passed */
       CORE_CRITICAL_SECTION(milliseconds += LETIMER_PERIOD_MS;);
     }
 
+#if DEVICE_IS_BLE_SERVER
   /* Set the COMP1 Event */
   if(flags == LETIMER_IEN_COMP1)
     {
       LETIMER_IntDisable(LETIMER0, LETIMER_IEN_COMP1);
       schedulerSetEvent_COMP1();
     }
-
-  //sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM2);
+#endif
 }
 
+#if DEVICE_IS_BLE_SERVER
 /***************************************************************************//**
  * @name I2C0_IRQHandler
  *
@@ -94,6 +96,7 @@ I2C_TransferReturn_TypeDef getI2CTransferReturn()
 {
   return I2CTransferReturn;
 }
+#endif
 
 uint32_t letimerMilliseconds()
 {

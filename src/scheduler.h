@@ -18,16 +18,28 @@
 /***************************************************************************//**
  * @name temperatureStateMachine
  *
- * @brief Contains the scheduler for the events which gets the temperature
- *        when UF event occurs.
+ * @brief Contains the scheduler for the events in the Server which gets
+ *        the temperature when UF event occurs.
  *
  * @param[in] sl_bt_msg_t *evt
  *
  *
  * @return void
  ******************************************************************************/
-
 void temperatureStateMachine(sl_bt_msg_t *evt);
+
+/***************************************************************************//**
+ * @name discovery_state_machine
+ *
+ * @brief Contains the scheduler for the events in the Client which connect
+ *        to the Server and acquire temperature data.
+ *
+ * @param[in] sl_bt_msg_t *evt
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void discovery_state_machine(sl_bt_msg_t *evt);
 
 /***************************************************************************//**
  * @name schedulerSetEvent_UF

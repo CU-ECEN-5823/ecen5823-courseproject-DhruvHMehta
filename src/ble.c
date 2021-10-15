@@ -5,28 +5,90 @@
  *      Author: Dhruv
  *      Reference : Used Bluetooth (SoC) Thermometer Example Code
  *      for handle_ble_events.
+ *      Professor David Sluiter - Used gattFloat32ToInt function
+ *      to convert from IEEE-11073 32-bit float to integer.
  *
  */
 #include "src/ble.h"
 #include "app_log.h"
 #include "app_assert.h"
+#include <math.h>
 
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
+
+#if DEVICE_IS_BLE_SERVER
 // The advertising set handle allocated from Bluetooth stack.
-static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indications_enabled = 0, \
+static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indications_enabled = 0,
                                      .gatt_server_connection = 0};
+#else
+static ble_data_struct_t ble_data = {.htm_indications_enabled = 0, .gatt_server_connection = 0,
+                                      .thermo_service = {0x09, 0x18},
+                                     .thermo_char = {0x1c, 0x2a}};
+#endif
 
 ble_data_struct_t* getBleDataPtr()
 {
   return(&ble_data);
 }
 
+static uint8_t check_slave_addr(sl_bt_msg_t *evt)
+{
+  uint8_t slave_addr_check = 0;
+  bd_addr ActualSlaveAddr = SERVER_BT_ADDRESS;
+
+  for(int i = 0; i < 6; i++)
+    {
+      if(evt->data.evt_scanner_scan_report.address.addr[i] == ActualSlaveAddr.addr[i])
+        {
+          slave_addr_check++;
+        }
+
+    }
+
+  if(slave_addr_check == 6)
+    {
+      return 1;
+    }
+
+  return 0;
+}
+
+// Original code from Dan Walkes. I (Sluiter) fixed a sign extension bug with the mantissa.
+// convert IEEE-11073 32-bit float to integer
+static int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)
+{
+  uint8_t     signByte = 0;
+  int32_t     mantissa;
+  // data format pointed at by value_start_little_endian is:
+  // [0]       = contains the flags byte
+  // [3][2][1] = mantissa (24-bit 2’s complement)
+  // [4]       = exponent (8-bit 2’s complement)
+  int8_t exponent = (int8_t)value_start_little_endian[4];
+
+  // sign extend the mantissa value if the mantissa is negative
+  if (value_start_little_endian[3] & 0x80)
+    { // msb of [3] is the sign of the mantissa
+      signByte = 0xFF;
+    }
+
+  mantissa = (int32_t) (value_start_little_endian[1]  << 0)  |
+                       (value_start_little_endian[2]  << 8)  |
+                       (value_start_little_endian[3]  << 16) |
+                       (signByte                      << 24) ;
+
+  // value = 10^exponent * mantissa, pow() returns a double type
+  return (int32_t) (pow(10, exponent) * mantissa);
+
+} // gattFloat32ToInt
+
 void handle_ble_event(sl_bt_msg_t *evt)
 {
     sl_status_t sc;
     uint8_t address_type;
+    uint8_t slave_addr_match = 0;
+    uint8_t *float_tempval;
 
     // Handle stack events
     switch (SL_BT_MSG_ID(evt->header)) {
@@ -35,15 +97,10 @@ void handle_ble_event(sl_bt_msg_t *evt)
       // Do not call any stack command before receiving this boot event!
       /* Boot Event */
       case sl_bt_evt_system_boot_id:
-        // Print boot message.
 
-        /*
-        LOG_INFO("Bluetooth stack booted: v%d.%d.%d-b%d\r\n",
-                     evt->data.evt_system_boot.major,
-                     evt->data.evt_system_boot.minor,
-                     evt->data.evt_system_boot.patch,
-                     evt->data.evt_system_boot.build);
-        */
+#if DEVICE_IS_BLE_SERVER
+        // SERVER
+
         // Extract unique ID from BT Address.
         sc = sl_bt_system_get_identity_address(&ble_data.myAddress, &address_type);
 
@@ -51,17 +108,6 @@ void handle_ble_event(sl_bt_msg_t *evt)
           {
             LOG_ERROR("sl_bt_system_get_identity_address() returned != 0 status=0x%04x", (unsigned int) sc);
           }
-
-        /*
-        LOG_INFO("Bluetooth %s address: %02X:%02X:%02X:%02X:%02X:%02X\r\n",
-                     address_type ? "static random" : "public device",
-                     ble_data.myAddress.addr[5],
-                     ble_data.myAddress.addr[4],
-                     ble_data.myAddress.addr[3],
-                     ble_data.myAddress.addr[2],
-                     ble_data.myAddress.addr[1],
-                     ble_data.myAddress.addr[0]);
-         */
 
         // Create an advertising set.
         sc = sl_bt_advertiser_create_set(&(ble_data.advertisingSetHandle));
@@ -74,10 +120,10 @@ void handle_ble_event(sl_bt_msg_t *evt)
         // Set advertising interval to 250ms.
         sc = sl_bt_advertiser_set_timing(
           ble_data.advertisingSetHandle, // advertising set handle
-          400, // min. adv. interval (milliseconds * 1.6)
-          400, // max. adv. interval (milliseconds * 1.6)
-          0,   // adv. duration
-          0);  // max. num. adv. events
+          400,                           // min. adv. interval (milliseconds * 1.6)
+          400,                           // max. adv. interval (milliseconds * 1.6)
+          0,                             // adv. duration
+          0);                            // max. num. adv. events
 
         if (sc != SL_STATUS_OK)
           {
@@ -108,14 +154,53 @@ void handle_ble_event(sl_bt_msg_t *evt)
         displayPrintf(DISPLAY_ROW_ASSIGNMENT, "A6");
         displayPrintf(DISPLAY_ROW_CONNECTION, "Advertising");
 
+#else
+        // CLIENT
+
+        /* Use Passive Scanning */
+        sc = sl_bt_scanner_set_mode(sl_bt_gap_phy_1m, 0);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_scanner_set_mode() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        /* Scan Interval = 50mS
+         * Scan Window = 25mS
+         */
+        sc = sl_bt_scanner_set_timing(sl_bt_gap_phy_1m, 80, 40);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_scanner_set_timing() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        /* Set default connection parameters */
+        sc = sl_bt_connection_set_default_parameters(60, 60, 3, 75, 0, 0xFFFF);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_connection_set_default_parameters() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        /* Start scanning for all devices */
+        sc = sl_bt_scanner_start(sl_bt_gap_phy_1m, sl_bt_scanner_discover_observation);
+
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_scanner_start() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+#endif
         break;
 
       // -------------------------------
       // This event indicates that a new connection was opened.
       /* Connection Opened Event */
       case sl_bt_evt_connection_opened_id:
-        //LOG_INFO("Connection opened\r\n");
 
+#if DEVICE_IS_BLE_SERVER
+        // SERVER
+        //LOG_INFO("Connection opened\r\n");
         /* Stop advertising */
         sc = sl_bt_advertiser_stop(ble_data.advertisingSetHandle);
 
@@ -138,13 +223,20 @@ void handle_ble_event(sl_bt_msg_t *evt)
         /* Display Connected on the LCD */
         displayPrintf(DISPLAY_ROW_CONNECTION, "Connected");
 
+#else
+        // CLIENT
+        /* Get the connection handle and save it */
+        ble_data.gatt_server_connection = evt->data.evt_connection_opened.connection;
+        ble_data.discoveryEvt = 1;
+#endif
         break;
-
       // -------------------------------
       // This event indicates that a connection was closed.
       /* Connection Close Event */
       case sl_bt_evt_connection_closed_id:
 
+#if DEVICE_IS_BLE_SERVER
+        // SERVER
         /* Reset the connection handle and the indication bool */
         ble_data.gatt_server_connection = 0;
         ble_data.htm_indications_enabled = 0;
@@ -168,12 +260,24 @@ void handle_ble_event(sl_bt_msg_t *evt)
 
         /* Display Advertising on the LCD */
         displayPrintf(DISPLAY_ROW_CONNECTION, "Advertising");
+#else
+        //CLIENT
+        /* Start scanning for new devices */
+        sc = sl_bt_scanner_start(sl_bt_gap_phy_1m, sl_bt_scanner_discover_observation);
 
+        if (sc != SL_STATUS_OK)
+          {
+            LOG_ERROR("sl_bt_scanner_start() returned != 0 status=0x%04x", (unsigned int) sc);
+          }
+
+        ble_data.discoveryEvt = 3;
+#endif
         break;
 
       /* Connnection Parameters Event */
       case sl_bt_evt_connection_parameters_id:
 
+        /* Common to SERVER and CLIENT */
         LOG_INFO("Interval = %d\r\n Latency = %d\r\n Timeout = %d\r\n",
                   (int)((evt->data.evt_connection_parameters.interval)*1.25),
                   (int)(evt->data.evt_connection_parameters.latency),
@@ -184,6 +288,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
       /* 1s Timer event for LCD EXTcomin */
       case sl_bt_evt_system_soft_timer_id:
 
+        /* Common to SERVER and CLIENT */
         displayUpdate();
 
         break;
@@ -201,7 +306,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
     {
       //ble_data.gatt_server_connection = evt->data.evt_gatt_server_characteristic_status.connection;
 
-      if( evt->data.evt_gatt_server_characteristic_status.status_flags == 1 && \
+      if( evt->data.evt_gatt_server_characteristic_status.status_flags == 1 &&
           evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_indication)
         {
           /* Start reading temperature */
@@ -221,13 +326,118 @@ void handle_ble_event(sl_bt_msg_t *evt)
       case sl_bt_evt_gatt_server_indication_timeout_id:
         break;
 
+     /* Event Scanner Scan Report Event */
+      case sl_bt_evt_scanner_scan_report_id:
+#if DEVICE_IS_BLE_SERVER
+        //SERVER
+        // should not happen
+#else
+        // CLIENT
+
+        slave_addr_match = check_slave_addr(evt);
+
+        if(slave_addr_match)
+          {
+            /* Server found, stop scanning for more advertising packets */
+            sc = sl_bt_scanner_stop();
+
+            if (sc != SL_STATUS_OK)
+              {
+                LOG_ERROR("sl_bt_scanner_stop() returned != 0 status=0x%04x", (unsigned int) sc);
+              }
+
+            /* Connect to the Server */
+            sc = sl_bt_connection_open(evt->data.evt_scanner_scan_report.address,
+                                       evt->data.evt_scanner_scan_report.address_type,
+                                       sl_bt_gap_phy_1m, NULL);
+
+            if (sc != SL_STATUS_OK)
+              {
+                LOG_ERROR("sl_bt_connection_open() returned != 0 status=0x%04x", (unsigned int) sc);
+              }
+
+          }
+
+#endif
+        break;
+
+      case sl_bt_evt_gatt_service_id:
+#if DEVICE_IS_BLE_SERVER
+        //SERVER
+        // should not happen
+#else
+        // CLIENT
+        /* Save the newly discovered service's handle */
+        if(evt->data.evt_gatt_service.uuid.data[0] == ble_data.thermo_service[0] &&
+           evt->data.evt_gatt_service.uuid.data[1] == ble_data.thermo_service[1])
+            ble_data.serviceHandle = evt->data.evt_gatt_service.service;
+#endif
+        break;
+
+      case sl_bt_evt_gatt_characteristic_id:
+#if DEVICE_IS_BLE_SERVER
+        //SERVER
+        // should not happen
+#else
+        // CLIENT
+        /* Save the newly discovered characteristics' handle */
+        if(evt->data.evt_gatt_characteristic.uuid.data[0] == ble_data.thermo_char[0] &&
+           evt->data.evt_gatt_characteristic.uuid.data[1] == ble_data.thermo_char[1])
+            ble_data.characteristicHandle = evt->data.evt_gatt_characteristic.characteristic;
+#endif
+        break;
+
+      case sl_bt_evt_gatt_characteristic_value_id:
+#if DEVICE_IS_BLE_SERVER
+        //SERVER
+        // should not happen
+#else
+        //CLIENT
+        /* Check if the att_opcode and gatt characteristic handle match */
+        if(evt->data.evt_gatt_characteristic_value.att_opcode == sl_bt_gatt_handle_value_indication &&
+            evt->data.evt_gatt_characteristic_value.characteristic == ble_data.characteristicHandle)
+          {
+            sc = sl_bt_gatt_send_characteristic_confirmation(ble_data.gatt_server_connection);
+
+            if (sc != SL_STATUS_OK)
+              {
+                LOG_ERROR("sl_bt_gatt_send_characteristic_confirmation() returned != 0 status=0x%04x", (unsigned int) sc);
+              }
+
+            float_tempval = &(evt->data.evt_gatt_characteristic_value.value.data);
+
+            LOG_INFO("Received Temperature = %d\r\n", gattFloat32ToInt(float_tempval));
+          }
+#endif
+        break;
+
+      case sl_bt_evt_gatt_procedure_completed_id:
+#if DEVICE_IS_BLE_SERVER
+        //SERVER
+        // should not happen
+#else
+        // CLIENT
+        /* Check which GATT procedure was completed */
+        /* If Discover Services by UUID was completed, check return status and set evtGattComplete */
+        if(evt->data.evt_gatt_procedure_completed.result == 0)
+          {
+            ble_data.discoveryEvt = 2;
+          }
+
+        /* If Discover Ch by UUID was completed, check return status and set GattComplete */
+
+#endif
+        break;
+
 
       // -------------------------------
       // Default event handler.
       default:
+
         break;
     }
 }
+
 
 void SendTemperature(float Temperature)
 {
