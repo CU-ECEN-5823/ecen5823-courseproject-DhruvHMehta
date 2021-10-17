@@ -116,7 +116,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
     {
       /* OPEN State, check if Connection open event has occurred, get the Services */
       case OPEN:
-        if(ble_data->discoveryEvt == evtOpenConnection)
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_connection_opened_id) &&
+            ble_data->discoveryEvt == evtOpenConnection)
           {
 
             /* Discover the primary services */
@@ -135,7 +136,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
         /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
       case CHARACTERISTICS:
-        if(ble_data->discoveryEvt == evtGATTComplete)
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
+            ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Discover the characteristics in the HTM Service */
               sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
@@ -153,7 +155,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
         /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
       case NOTIFY:
-        if(ble_data->discoveryEvt == evtGATTComplete)
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
+            ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Enable indications for the HTM Thermometer Measurement Characteristic */
               sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
@@ -169,9 +172,10 @@ void discovery_state_machine(sl_bt_msg_t *evt)
             }
         break;
 
-        /* Data State, check if the data is received, print it on the display */
+        /* Close State, if connection closes, start over */
       case CLOSE:
-        if(ble_data->discoveryEvt == evtConnectionClosed)
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_connection_closed_id) &&
+            ble_data->discoveryEvt == evtConnectionClosed)
           {
             currentste = OPEN;
           }

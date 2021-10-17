@@ -24,10 +24,19 @@ static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indicati
                                      .gatt_server_connection = 0};
 #else
 static ble_data_struct_t ble_data = {.htm_indications_enabled = 0, .gatt_server_connection = 0,
-                                      .thermo_service = {0x09, 0x18},
-                                     .thermo_char = {0x1c, 0x2a}};
+                                      .thermo_service = {0x09, 0x18}, .thermo_char = {0x1c, 0x2a}};
+#define PASSIVE_SCANNING 0
+#define SCAN_INTERVAL    80
+#define SCAN_WINDOW      40
+#define CONNECTION_OPEN  1
+#define GATT_COMPLETE    2
+#define CONNECTION_CLOSED 3
+
 #endif
 
+#define MIN_MAX_INTERVAL  60
+#define SLAVE_LATENCY     3
+#define SLAVE_TIMEOUT     75
 ble_data_struct_t* getBleDataPtr()
 {
   return(&ble_data);
@@ -171,7 +180,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
         // CLIENT
 
         /* Use Passive Scanning */
-        sc = sl_bt_scanner_set_mode(sl_bt_gap_phy_1m, 0);
+        sc = sl_bt_scanner_set_mode(sl_bt_gap_phy_1m, PASSIVE_SCANNING);
 
         if (sc != SL_STATUS_OK)
           {
@@ -181,7 +190,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
         /* Scan Interval = 50mS
          * Scan Window = 25mS
          */
-        sc = sl_bt_scanner_set_timing(sl_bt_gap_phy_1m, 80, 40);
+        sc = sl_bt_scanner_set_timing(sl_bt_gap_phy_1m, SCAN_INTERVAL, SCAN_WINDOW);
 
         if (sc != SL_STATUS_OK)
           {
@@ -189,7 +198,8 @@ void handle_ble_event(sl_bt_msg_t *evt)
           }
 
         /* Set default connection parameters */
-        sc = sl_bt_connection_set_default_parameters(60, 60, 3, 75, 0, 0xFFFF);
+        sc = sl_bt_connection_set_default_parameters(MIN_MAX_INTERVAL, MIN_MAX_INTERVAL, SLAVE_LATENCY,
+                                                     SLAVE_TIMEOUT, 0, 0xFFFF);
 
         if (sc != SL_STATUS_OK)
           {
@@ -240,7 +250,8 @@ void handle_ble_event(sl_bt_msg_t *evt)
         ble_data.gatt_server_connection = evt->data.evt_connection_opened.connection;
 
         /* Set the connection parameters */
-        sc = sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, 60, 60, 3, 75, 0, 0xFFFF);
+        sc = sl_bt_connection_set_parameters(evt->data.evt_connection_opened.connection, MIN_MAX_INTERVAL,
+                                             MIN_MAX_INTERVAL, SLAVE_LATENCY, SLAVE_TIMEOUT, 0, 0xFFFF);
 
         if (sc != SL_STATUS_OK)
           {
@@ -254,7 +265,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
         // CLIENT
         /* Get the connection handle and save it, set connection opened event  */
         ble_data.gatt_server_connection = evt->data.evt_connection_opened.connection;
-        ble_data.discoveryEvt = 1;
+        ble_data.discoveryEvt = CONNECTION_OPEN;
 
         /* Display Connected on the LCD and Server Address */
         displayPrintf(DISPLAY_ROW_CONNECTION, "Connected");
@@ -306,7 +317,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
           }
 
         /* Set the connection closed event */
-        ble_data.discoveryEvt = 3;
+        ble_data.discoveryEvt = CONNECTION_CLOSED;
 
         /* Display Discovering on the LCD */
         displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
@@ -430,7 +441,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                 LOG_ERROR("sl_bt_gatt_send_characteristic_confirmation() returned != 0 status=0x%04x", (unsigned int) sc);
               }
 
-            float_tempval = &(evt->data.evt_gatt_characteristic_value.value.data);
+            float_tempval = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
             Client_Temperature = gattFloat32ToInt(float_tempval);
 
             /* Display Recieved Temperature on the LCD for the Client */
@@ -448,8 +459,10 @@ void handle_ble_event(sl_bt_msg_t *evt)
         if(evt->data.evt_gatt_procedure_completed.result == 0)
           {
             /* Set the GATT completed event */
-            ble_data.discoveryEvt = 2;
+            ble_data.discoveryEvt = GATT_COMPLETE;
           }
+        else LOG_ERROR("sl_bt_evt_gatt_procedure_completed_id() returned != 0 status=0x%04x",
+                       (unsigned int) evt->data.evt_gatt_procedure_completed.result);
         break;
 #endif
 
