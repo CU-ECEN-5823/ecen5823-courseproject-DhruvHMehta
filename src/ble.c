@@ -12,21 +12,41 @@
 #include "src/ble.h"
 #include "app_log.h"
 #include "app_assert.h"
-#include "cbfifo.h"
 #include <math.h>
+#include <stdint.h>
 
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
 
 #if DEVICE_IS_BLE_SERVER
+#define SM_CONFIG_FLAGS 0x0F
+#define SIZE (16)           /* Size of Buffer */
+#define EXTSIGEVENT 4
+#define NOT_BONDED  0
+#define BONDING     1
+#define BONDED      2
+
+struct buffer_data{
+  uint16_t charHandle;      /* Characteristic handle from GATTdb */
+  size_t   bufferLength;    /* Length of buffer in bytes to send */
+  uint8_t  buffer[5];       /* Actual buffer size. 5 bytes for htm and 2 for btn */
+};
+
+typedef struct{
+struct buffer_data Data[SIZE];    /* Buffer */
+uint8_t wrloc;                    /* Write Location (where to write next) */
+uint8_t rdloc;                    /* Read Location (where to read from next) */
+uint8_t isFull;                   /* Flag to indicate buffer full */
+}Buffer;
+
+Buffer queue = {.isFull = 0, .rdloc = 0, .wrloc = 0};
+
 // The advertising set handle allocated from Bluetooth stack.
 static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indications_enabled = 0,
                                      .btn_indications_enabled = 0, .gatt_server_connection = 0,
                                      .bonding_state = 0};
-Buffer queue = {.isFull = 0, .rdloc = 0, .wrloc = 0};
 struct buffer_data indication_data;
-#define SM_CONFIG_FLAGS 0x0F
 #else
 static ble_data_struct_t ble_data = {.htm_indications_enabled = 0, .gatt_server_connection = 0,
                                       .thermo_service = {0x09, 0x18}, .thermo_char = {0x1c, 0x2a}};
@@ -41,12 +61,55 @@ static ble_data_struct_t ble_data = {.htm_indications_enabled = 0, .gatt_server_
 #define MIN_MAX_INTERVAL  60
 #define SLAVE_LATENCY     3
 #define SLAVE_TIMEOUT     75
+
 ble_data_struct_t* getBleDataPtr()
 {
   return(&ble_data);
 }
 
 #if DEVICE_IS_BLE_SERVER
+int cbfifo_enqueue(Buffer* Cbfifo, struct buffer_data *buf)
+{
+    if(buf == NULL || Cbfifo == NULL)
+        return -1;                              /* Input buffer is NULL */
+
+    if((Cbfifo->wrloc == Cbfifo->rdloc) && (Cbfifo->isFull == 1))
+      return -1;
+
+    Cbfifo->Data[Cbfifo->wrloc] = *buf;        /* Write to buffer */
+    Cbfifo->wrloc = (Cbfifo->wrloc + 1) & (SIZE - 1); /* Wrapped addition of wrloc */
+
+    /* If ptrs match, buffer is full */
+    if(Cbfifo->wrloc == Cbfifo->rdloc)
+        Cbfifo->isFull = 1;
+
+    return 0;
+}
+
+int cbfifo_dequeue(Buffer* Cbfifo, struct buffer_data *buf)
+{
+    if(buf == NULL || Cbfifo == NULL)
+        return -1;                                /* Input buffer is NULL */
+
+    if((Cbfifo->rdloc == Cbfifo->wrloc) && (Cbfifo->isFull == 0))
+      return -1;
+
+    *buf = Cbfifo->Data[Cbfifo->rdloc];        /* Read from buffer */
+    Cbfifo->rdloc = (Cbfifo->rdloc + 1) & (SIZE - 1);  /* Wrapped addition of rdloc */
+
+    if(Cbfifo->isFull == 1)
+      Cbfifo->isFull = 0;
+
+    return 0;
+}
+
+size_t cbfifo_length(Buffer* Cbfifo)
+{
+  if(Cbfifo->isFull == 0)
+      return ((Cbfifo->wrloc - Cbfifo->rdloc) & (SIZE - 1));
+
+  else return 1;
+}
 #else
 /*******************************************************************************
  * @name check_slave_addr
@@ -346,7 +409,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
             LOG_ERROR("sl_bt_sm_delete_bondings() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
           }
 
-        ble_data.bonding_state = 0;
+        ble_data.bonding_state = NOT_BONDED;
         gpioLed0SetOff();
         gpioLed1SetOff();
 #else
@@ -387,37 +450,43 @@ void handle_ble_event(sl_bt_msg_t *evt)
         if(evt->data.evt_system_soft_timer.handle == 0)
           displayUpdate();
 
+#if DEVICE_IS_BLE_SERVER
+    // SERVER
         else if(evt->data.evt_system_soft_timer.handle == 1)
           {
             /* No indications in flight */
-            if(((cbfifo_dequeue(&queue, &indication_data)) == 0) && ble_data.in_flight == 0)
+            if((cbfifo_length(&queue) > 0) && ble_data.in_flight == 0)
               {
-                // -------------------------------// Write our local GATT DB// -------------------------------
-                sc = sl_bt_gatt_server_write_attribute_value(
-                    indication_data.charHandle, // handle from gatt_db.h
-                    0,                              // offset
-                    indication_data.bufferLength,   // length
-                    indication_data.buffer      // pointer to buffer where data is
-                );
-
-                if (sc != SL_STATUS_OK)
+                if((cbfifo_dequeue(&queue, &indication_data)) == 0)
                   {
-                    LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+                    // -------------------------------// Write our local GATT DB// -------------------------------
+                    sc = sl_bt_gatt_server_write_attribute_value(
+                        indication_data.charHandle, // handle from gatt_db.h
+                        0,                              // offset
+                        indication_data.bufferLength,   // length
+                        indication_data.buffer      // pointer to buffer where data is
+                    );
+
+                    if (sc != SL_STATUS_OK)
+                      {
+                        LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+                      }
+
+                    sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
+                                                           indication_data.charHandle,
+                                                           indication_data.bufferLength,
+                                                           indication_data.buffer);
+
+                    ble_data.in_flight = 1;
+                    if (sc != SL_STATUS_OK)
+                      {
+                        LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+                        ble_data.in_flight = 0;
+                      }
                   }
-
-                sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
-                                                       indication_data.charHandle,
-                                                       indication_data.bufferLength,
-                                                       indication_data.buffer);
-
-                if (sc != SL_STATUS_OK)
-                  {
-                    LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
-                  }
-
-                ble_data.in_flight = 1;
               }
           }
+#endif
         break;
 
       /* GATT Server Indication Timeout Event */
@@ -493,10 +562,10 @@ void handle_ble_event(sl_bt_msg_t *evt)
       case sl_bt_evt_system_external_signal_id:
 
         /* Button pressed */
-        if(evt->data.evt_system_external_signal.extsignals == 4)
+        if(evt->data.evt_system_external_signal.extsignals == EXTSIGEVENT)
           {
             /* Pairing request received */
-            if(ble_data.bonding_state == 1)
+            if(ble_data.bonding_state == BONDING)
               {
                 displayPrintf(DISPLAY_ROW_PASSKEY, " ");
                 displayPrintf(DISPLAY_ROW_ACTION, " ");
@@ -508,16 +577,20 @@ void handle_ble_event(sl_bt_msg_t *evt)
                   }
 
                 /* Bonded */
-                ble_data.bonding_state = 2;
+                ble_data.bonding_state = BONDED;
               }
 
             /* Check the button state */
             button_val = GPIO_PinInGet(gpioPortF, PB0_pin);
 
+            /* 0 means that the button is pressed since the button is connected to GND */
             if(button_val == 1)
                 displayPrintf(DISPLAY_ROW_9, "Button Released");
             else if(button_val == 0)
               displayPrintf(DISPLAY_ROW_9, "Button Pressed");
+
+            /* To interpret button press as 1 and release as 0 */
+            button_val = !button_val;
 
             // -------------------------------// Write our local GATT DB// -------------------------------
             sc = sl_bt_gatt_server_write_attribute_value(
@@ -534,7 +607,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
 
             /* Send indications only if connection is established, client is bonded and indications are enabled */
             if((ble_data.gatt_server_connection != 0) && (ble_data.btn_indications_enabled == 1) &&
-                (ble_data.bonding_state == 2) && (ble_data.in_flight == 0))
+                (ble_data.bonding_state == BONDED) && (ble_data.in_flight == 0))
               {
 
                 sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
@@ -542,16 +615,18 @@ void handle_ble_event(sl_bt_msg_t *evt)
                                                        1,
                                                        &button_val);
 
+                ble_data.in_flight = 1;
+
                 if (sc != SL_STATUS_OK)
                   {
                     LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+                    ble_data.in_flight = 0;
                   }
 
-                ble_data.in_flight = 1;
               }
 
             else if ((ble_data.gatt_server_connection != 0) && (ble_data.btn_indications_enabled == 1) &&
-                (ble_data.bonding_state == 2) && (ble_data.in_flight == 1))
+                (ble_data.bonding_state == BONDED) && (ble_data.in_flight == 1))
               {
                 indication_data.charHandle   = gattdb_button_state;
                 indication_data.bufferLength = 1;
@@ -592,7 +667,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
             displayPrintf(DISPLAY_ROW_ACTION, "Confirm with PB0");
 
             /* Pairing in process */
-            ble_data.bonding_state = 1;
+            ble_data.bonding_state = BONDING;
           }
         break;
 
@@ -699,7 +774,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
     }
 }
 
-
+#if DEVICE_IS_BLE_SERVER
 void SendTemperature(float Temperature)
 {
 
@@ -743,12 +818,12 @@ void SendTemperature(float Temperature)
                                                  5,
                                                  htm_temperature_buffer);
 
+          ble_data.in_flight = 1;
           if (sc != SL_STATUS_OK)
             {
               LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+              ble_data.in_flight = 0;
             }
-
-          ble_data.in_flight = 1;
 
           /* Update Temperature on the LCD */
           displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", (int) Temperature);
@@ -768,3 +843,4 @@ void SendTemperature(float Temperature)
     }
 
 }
+#endif

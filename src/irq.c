@@ -109,7 +109,7 @@ uint32_t letimerMilliseconds()
   return (milliseconds + ctrmilliseconds);
 }
 
-
+#if DEVICE_IS_BLE_SERVER
 /***************************************************************************//**
  * @name I2C0_IRQHandler
  *
@@ -136,3 +136,4 @@ void GPIO_EVEN_IRQHandler()
     }
 
 }
+#endif
