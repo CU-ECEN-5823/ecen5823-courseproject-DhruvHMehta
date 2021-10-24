@@ -77,4 +77,16 @@ void schedulerSetEvent_COMP1();
  ******************************************************************************/
 void schedulerSetEvent_I2Cdone();
 
+/***************************************************************************//**
+ * @name schedulerSetEvent_ButtonPressed
+ *
+ * @brief Sets the Button Pressed in the scheduler event.
+ *
+ * @param[in] none
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void schedulerSetEvent_ButtonPressed();
+
 #endif /* SRC_SCHEDULER_H_ */

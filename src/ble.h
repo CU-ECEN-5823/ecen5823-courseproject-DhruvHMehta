@@ -12,6 +12,7 @@
 #include "gatt_db.h"
 #include "lcd.h"
 #include "ble_device_type.h"
+#include "gpio.h"
 
 /* Macro Definitions */
 #define UINT8_TO_BITSTREAM(p, n)      { *(p)++ = (uint8_t)(n); }
@@ -28,7 +29,10 @@ typedef struct
    bd_addr myAddress;               /* Own Address */
    uint8_t advertisingSetHandle;    /* Advertising Handle */
    uint8_t htm_indications_enabled; /* Health Thermometer Indications enabled bool */
+   uint8_t btn_indications_enabled; /* Button state indications enabled */
    uint8_t gatt_server_connection;  /* Connection Handle */
+   uint8_t in_flight;               /* Indication in flight */
+   uint8_t bonding_state;           /* Bonded = 1/ Not bonded = 0 */
 }ble_data_struct_t;
 #else
 typedef struct

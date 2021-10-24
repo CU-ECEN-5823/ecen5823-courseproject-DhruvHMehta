@@ -14,7 +14,7 @@
 
 #if DEVICE_IS_BLE_SERVER
 enum States{IDLE, POWERUP, MEASURE, WAIT, REPORT};
-enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete};
+enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete, evtButtonPressed};
 enum States currentste = IDLE;
 #else
 enum States{OPEN, CHARACTERISTICS, NOTIFY, CLOSE};
@@ -202,5 +202,10 @@ void schedulerSetEvent_COMP1()
 void schedulerSetEvent_I2Cdone()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtI2C0_Complete););
+}
+
+void schedulerSetEvent_ButtonPressed()
+{
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtButtonPressed););
 }
 #endif

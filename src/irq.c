@@ -108,3 +108,31 @@ uint32_t letimerMilliseconds()
 
   return (milliseconds + ctrmilliseconds);
 }
+
+
+/***************************************************************************//**
+ * @name I2C0_IRQHandler
+ *
+ * @brief
+ *   Interrupt handler which sets events based on the interrupt.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
+void GPIO_EVEN_IRQHandler()
+{
+  /* Check which IF is set */
+  uint32_t flags = GPIO_IntGetEnabled();
+
+  /* Clear the interrupt */
+  GPIO_IntClear(flags);
+
+  /* Set the button release event */
+  if(flags == (1 << PB0_pin))
+    {
+      schedulerSetEvent_ButtonPressed();
+    }
+
+}

@@ -32,6 +32,8 @@
 #define SENS_EN    15
 #define DISP_port  gpioPortD
 #define DISP_EN    13
+#define PB0_port   gpioPortF
+#define PB0_pin    6
 
 
 // Function prototypes
