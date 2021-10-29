@@ -183,6 +183,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                                                           ble_data->serviceHandle[1],
                                                           sizeof(ble_data->encrypted_char),
                                                           ble_data->encrypted_char);
+
               if (sc != SL_STATUS_OK)
                 {
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
@@ -202,6 +203,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                                                               ble_data->characteristicHandle[0],
                                                               sl_bt_gatt_indication);
 
+              displayPrintf(DISPLAY_ROW_CONNECTION, "Handling Indications");
               if (sc != SL_STATUS_OK)
                 {
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);

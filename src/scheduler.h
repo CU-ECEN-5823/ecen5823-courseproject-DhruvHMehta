@@ -12,6 +12,7 @@
 #include "i2c.h"
 #include "irq.h"
 #include "sl_bt_api.h"
+#include "lcd.h"
 
 /* Function Prototypes */
 

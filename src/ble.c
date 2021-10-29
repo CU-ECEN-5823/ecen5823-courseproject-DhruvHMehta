@@ -21,6 +21,7 @@
 
 #if DEVICE_IS_BLE_SERVER
 #define SIZE (16)           /* Size of Buffer */
+#define EXTSIGEVENT 4
 
 struct buffer_data{
   uint16_t charHandle;      /* Characteristic handle from GATTdb */
@@ -799,7 +800,6 @@ void handle_ble_event(sl_bt_msg_t *evt)
             Client_Temperature = gattFloat32ToInt(float_tempval);
 
             /* Display Recieved Temperature on the LCD for the Client */
-            //displayPrintf(DISPLAY_ROW_CONNECTION, "Handling Indications");
             displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", Client_Temperature);
 
             LOG_INFO("Received Temperature = %d\r\n", Client_Temperature);
