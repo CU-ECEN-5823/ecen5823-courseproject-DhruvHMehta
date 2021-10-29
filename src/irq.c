@@ -111,10 +111,10 @@ uint32_t letimerMilliseconds()
 
 #if DEVICE_IS_BLE_SERVER
 /***************************************************************************//**
- * @name I2C0_IRQHandler
+ * @name GPIO_EVEN_IRQHandler
  *
  * @brief
- *   Interrupt handler which sets events based on the interrupt.
+ *   Interrupt handler which sets events based on the GPIO even pin interrupt.
  *
  * @param[in] osc
  *   none
@@ -133,6 +133,59 @@ void GPIO_EVEN_IRQHandler()
   if(flags == (1 << PB0_pin))
     {
       schedulerSetEvent_ButtonPressed();
+    }
+
+}
+#else
+/***************************************************************************//**
+ * @name GPIO_EVEN_IRQHandler
+ *
+ * @brief
+ *   Interrupt handler which sets events based on the GPIO even pin interrupt.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
+void GPIO_EVEN_IRQHandler()
+{
+  /* Check which IF is set */
+  uint32_t flags = GPIO_IntGetEnabled();
+
+  /* Clear the interrupt */
+  GPIO_IntClear(flags);
+
+  /* Set the button release event */
+  if(flags == (1 << PB0_pin))
+    {
+      schedulerSetEvent_ButtonPressed_PB0();
+    }
+
+}
+/***************************************************************************//**
+ * @name GPIO_ODD_IRQHandler
+ *
+ * @brief
+ *   Interrupt handler which sets events based on the GPIO odd pin interrupt.
+ *
+ * @param[in] osc
+ *   none
+ *
+ * @return void
+ ******************************************************************************/
+void GPIO_ODD_IRQHandler()
+{
+  /* Check which IF is set */
+  uint32_t flags = GPIO_IntGetEnabled();
+
+  /* Clear the interrupt */
+  GPIO_IntClear(flags);
+
+  /* Set the button release event */
+  if(flags == (1 << PB1_pin))
+    {
+      schedulerSetEvent_ButtonPressed_PB1();
     }
 
 }

@@ -32,13 +32,18 @@ void gpioInit()
   GPIO_PinModeSet(SENS_port, SENS_EN, gpioModePushPull, false);
   GPIO_PinModeSet(DISP_port, DISP_EN, gpioModePushPull, false);
   GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInputPullFilter, true);
+  GPIO_PinModeSet(PB1_port, PB1_pin, gpioModeInputPullFilter, true);
   GPIO_ExtIntConfig(PB0_port, PB0_pin, PB0_pin, true, true, true);
+  GPIO_ExtIntConfig(PB1_port, PB1_pin, PB1_pin, true, false, true);
 
   /* Clear any pending IRQ */
   NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+  NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
 
   /* Enable Interrupts in the NVIC for GPIO */
   NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+  NVIC_EnableIRQ(GPIO_ODD_IRQn);
+
 
 } // gpioInit()
 

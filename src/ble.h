@@ -42,10 +42,14 @@ typedef struct
    uint8_t gatt_server_connection;  /* Connection Handle */
    uint8_t thermo_service[2];       /* Thermometer Service UUID */
    uint8_t thermo_char[2];          /* Thermometer Measurement Characteristic UUID */
-   uint32_t serviceHandle;          /* Service Handle */
-   uint8_t characteristicHandle;    /* Characteristic Handle */
+   uint8_t encrypted_service[16];   /* Encrypted Service UUID */
+   uint8_t encrypted_char[16];      /* Encrypted Characteristic UUID (Button State) */
+   uint32_t serviceHandle[2];       /* Service Handle */
+   uint8_t characteristicHandle[2]; /* Characteristic Handle */
    bd_addr serverAddress;           /* Hard-coded address of server */
    uint8_t discoveryEvt;            /* Event in Discovery State Machine */
+   uint8_t btn_indications_enabled; /* Button state indications enabled */
+   uint8_t bonding_state;           /* Bonded = 1/ Not bonded = 0 */
 }ble_data_struct_t;
 #endif
 

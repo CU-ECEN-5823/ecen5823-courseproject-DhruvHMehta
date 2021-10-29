@@ -17,9 +17,9 @@ enum States{IDLE, POWERUP, MEASURE, WAIT, REPORT};
 enum Events{evtNone, evtLETIMER0_UF, evtLETIMER0_COMP1, evtI2C0_Complete, evtButtonPressed};
 enum States currentste = IDLE;
 #else
-enum States{OPEN, CHARACTERISTICS, NOTIFY, CLOSE};
-enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed};
-enum States currentste = OPEN;
+enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, CLOSE};
+enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed, evtButtonPressed_PB0, evtButtonPressed_PB1};
+enum States currentste = OPEN_S1;
 #endif
 
 #if DEVICE_IS_BLE_SERVER
@@ -115,7 +115,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
     switch(currentste)
     {
       /* OPEN State, check if Connection open event has occurred, get the Services */
-      case OPEN:
+      case OPEN_S1:
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_connection_opened_id) &&
             ble_data->discoveryEvt == evtOpenConnection)
           {
@@ -130,18 +130,38 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                 LOG_ERROR("sl_bt_gatt_discover_primary_services_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
               }
 
-            currentste = CHARACTERISTICS;
+            currentste = OPEN_S2;
           }
         break;
 
+        /* OPEN State, check if Connection open event has occurred, get the Services */
+        case OPEN_S2:
+          if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
+              ble_data->discoveryEvt == evtGATTComplete)
+            {
+
+              /* Discover the primary services */
+              sc = sl_bt_gatt_discover_primary_services_by_uuid(ble_data->gatt_server_connection,
+                                                                sizeof(ble_data->encrypted_service),
+                                                                ble_data->encrypted_service);
+
+              if (sc != SL_STATUS_OK)
+                {
+                  LOG_ERROR("sl_bt_gatt_discover_primary_services_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                }
+
+              currentste = CHARACTERISTICS_S1;
+            }
+          break;
+
         /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
-      case CHARACTERISTICS:
+      case CHARACTERISTICS_S1:
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Discover the characteristics in the HTM Service */
               sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
-                                                          ble_data->serviceHandle,
+                                                          ble_data->serviceHandle[0],
                                                           sizeof(ble_data->thermo_char),
                                                           ble_data->thermo_char);
               if (sc != SL_STATUS_OK)
@@ -149,18 +169,56 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                 }
 
-              currentste = NOTIFY;
+              currentste = CHARACTERISTICS_S2;
+            }
+        break;
+
+        /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
+      case CHARACTERISTICS_S2:
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
+            ble_data->discoveryEvt == evtGATTComplete)
+            {
+              /* Discover the characteristics in the Btn Service */
+              sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
+                                                          ble_data->serviceHandle[1],
+                                                          sizeof(ble_data->encrypted_char),
+                                                          ble_data->encrypted_char);
+              if (sc != SL_STATUS_OK)
+                {
+                  LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                }
+
+              currentste = NOTIFY_S1;
             }
         break;
 
         /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
-      case NOTIFY:
+      case NOTIFY_S1:
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Enable indications for the HTM Thermometer Measurement Characteristic */
               sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
-                                                              ble_data->characteristicHandle,
+                                                              ble_data->characteristicHandle[0],
+                                                              sl_bt_gatt_indication);
+
+              if (sc != SL_STATUS_OK)
+                {
+                  LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                }
+
+              currentste = NOTIFY_S2;
+            }
+        break;
+
+        /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
+      case NOTIFY_S2:
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
+            ble_data->discoveryEvt == evtGATTComplete)
+            {
+              /* Enable indications for the Btn_State Characteristic */
+              sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
+                                                              ble_data->characteristicHandle[1],
                                                               sl_bt_gatt_indication);
 
               if (sc != SL_STATUS_OK)
@@ -177,7 +235,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_connection_closed_id) &&
             ble_data->discoveryEvt == evtConnectionClosed)
           {
-            currentste = OPEN;
+            currentste = OPEN_S1;
           }
         break;
     }
@@ -207,5 +265,14 @@ void schedulerSetEvent_I2Cdone()
 void schedulerSetEvent_ButtonPressed()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtButtonPressed););
+}
+#else
+void schedulerSetEvent_ButtonPressed_PB0()
+{
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtButtonPressed_PB0););
+}
+void schedulerSetEvent_ButtonPressed_PB1()
+{
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtButtonPressed_PB1););
 }
 #endif

@@ -89,4 +89,28 @@ void schedulerSetEvent_I2Cdone();
  ******************************************************************************/
 void schedulerSetEvent_ButtonPressed();
 
+/***************************************************************************//**
+ * @name schedulerSetEvent_ButtonPressed_PB0
+ *
+ * @brief Sets the Button Pressed PB0 for the client.
+ *
+ * @param[in] none
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void schedulerSetEvent_ButtonPressed_PB0();
+
+/***************************************************************************//**
+ * @name schedulerSetEvent_ButtonPressed_PB1
+ *
+ * @brief Sets the Button Pressed PB1 for the client.
+ *
+ * @param[in] none
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void schedulerSetEvent_ButtonPressed_PB1();
+
 #endif /* SRC_SCHEDULER_H_ */
