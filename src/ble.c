@@ -799,7 +799,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
             float_tempval = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
             Client_Temperature = gattFloat32ToInt(float_tempval);
 
-            /* Display Recieved Temperature on the LCD for the Client */
+            /* Display Received Temperature on the LCD for the Client */
             displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", Client_Temperature);
 
             LOG_INFO("Received Temperature = %d\r\n", Client_Temperature);
