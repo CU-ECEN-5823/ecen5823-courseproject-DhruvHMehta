@@ -55,6 +55,7 @@
 #include "src/i2c.h"
 #include "src/scheduler.h"
 #include "src/ble.h"
+#include "src/adc.h"
 
 /* Macros for Energy Modes */
 #define EM0 0 /* Run */

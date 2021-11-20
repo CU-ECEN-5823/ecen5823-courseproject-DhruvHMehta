@@ -90,6 +90,7 @@ SL_WEAK void app_init(void)
   I2CInit();
   LETIMER0Init();
   LETIMER0InterruptEn();
+  ADCInit();
 
 #if (LOWEST_ENERGY_MODE == EM0)
   /* No em requirement */
