@@ -28,6 +28,18 @@
 void I2CInit();
 
 /***************************************************************************//**
+ * @name I2CInit_gesture
+ *
+ * @brief
+ *   Initializes the I2C peripheral for the APDS 9960 gesture sensor.
+ *
+ * @param[in] none
+ *
+ * @return void
+ ******************************************************************************/
+void I2CInit_gesture();
+
+/***************************************************************************//**
  * @name I2CTransferInitWrapper
  *
  * @brief

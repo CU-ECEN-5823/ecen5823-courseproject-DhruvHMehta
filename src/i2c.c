@@ -120,3 +120,22 @@ void reportTemperatureSi7021()
   SendTemperature(Calc_Temp);
 
 }
+
+I2CSPM_Init_TypeDef init_gesture;
+
+void I2CInit_gesture(){
+
+    init_gesture.port       = I2C0;
+    init_gesture.sclPort    = gpioPortC;
+    init_gesture.sclPin     = 10;
+    init_gesture.sdaPort    = gpioPortC;
+    init_gesture.sdaPin     = 11;
+    init_gesture.portLocationScl = 14;
+    init_gesture.portLocationSda = 16;
+    init_gesture.i2cRefFreq = 0;
+    init_gesture.i2cMaxFreq = I2C_FREQ_STANDARD_MAX;
+    init_gesture.i2cClhr    = i2cClockHLRStandard;
+
+    I2CSPM_Init(&init_gesture);
+    LOG_INFO("initialised\r\n");
+}
