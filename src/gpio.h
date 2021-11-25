@@ -36,6 +36,8 @@
 #define PB0_pin    6
 #define PB1_port   gpioPortF
 #define PB1_pin    7
+#define AMB_port   gpioPortD
+#define AMB_pin    10
 
 // Function prototypes
 void gpioInit();
@@ -44,6 +46,7 @@ void gpioLed0SetOff();
 void gpioLed1SetOn();
 void gpioLed1SetOff();
 void gpioSensorEnSetOn();
-void  gpioSetDisplayExtcomin(bool value);
+void gpioSetDisplayExtcomin(bool value);
+void gpioAMBSensor(bool value);
 
 #endif /* SRC_GPIO_H_ */

@@ -137,7 +137,8 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
 #if DEVICE_IS_BLE_SERVER
   // sequence through states driven by events
-   temperatureStateMachine(evt);    // put this code in scheduler.c/.h
+     ambientLightStateMachine(evt);
+   //temperatureStateMachine(evt);    // put this code in scheduler.c/.h
 #else
    // sequence through service and characteristic discovery
    discovery_state_machine(evt);    // put this code in scheduler.c/.h

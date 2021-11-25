@@ -15,6 +15,7 @@
 #include "timers.h"
 #include "em_i2c.h"
 #include "em_gpio.h"
+#include "em_adc.h"
 
 /***************************************************************************//**
  * @name letimerMilliseconds

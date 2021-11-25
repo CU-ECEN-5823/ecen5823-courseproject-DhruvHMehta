@@ -10,5 +10,6 @@
 
 #include "em_adc.h"
 #include "timers.h"
+#include "gpio.h"
 
 #endif /* SRC_ADC_H_ */

@@ -136,6 +136,23 @@ void GPIO_EVEN_IRQHandler()
     }
 
 }
+
+void ADC0_IRQHandler()
+{
+  /* Check which IF is set */
+  uint32_t flags = ADC_IntGetEnabled(ADC0);
+
+  /* Clear the interrupt */
+  ADC_IntClear(ADC0, flags);
+
+  ADC_DataSingleGet(ADC0);
+
+  //ADC_Start(ADC0, adcStartSingle);
+  /* Set the ADC Conversion complete event */
+  if(flags == ADC_IEN_SINGLE)
+    schedulerSetEvent_ADC0_Single();
+
+}
 #else
 /***************************************************************************//**
  * @name GPIO_EVEN_IRQHandler

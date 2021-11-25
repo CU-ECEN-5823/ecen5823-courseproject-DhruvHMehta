@@ -16,25 +16,22 @@
 void gpioInit()
 {
 
-  // Student Edit:
-
-
-	//GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthStrongAlternateStrong);
 	GPIO_DriveStrengthSet(LED0_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(LED0_port, LED0_pin, gpioModePushPull, false);
 
-	//GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthStrongAlternateStrong);
 	GPIO_DriveStrengthSet(LED1_port, gpioDriveStrengthWeakAlternateWeak);
 	GPIO_PinModeSet(LED1_port, LED1_pin, gpioModePushPull, false);
 
-  //GPIO_PinModeSet(I2C0_port, I2C0_SCL, gpioModePushPull, false);
-  //GPIO_PinModeSet(I2C0_port, I2C0_SDA, gpioModePushPull, false);
   GPIO_PinModeSet(SENS_port, SENS_EN, gpioModePushPull, false);
   GPIO_PinModeSet(DISP_port, DISP_EN, gpioModePushPull, false);
+
   GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInputPullFilter, true);
   GPIO_PinModeSet(PB1_port, PB1_pin, gpioModeInputPullFilter, true);
   GPIO_ExtIntConfig(PB0_port, PB0_pin, PB0_pin, true, true, true);
   GPIO_ExtIntConfig(PB1_port, PB1_pin, PB1_pin, true, false, true);
+
+  GPIO_DriveStrengthSet(AMB_port, gpioDriveStrengthStrongAlternateStrong);
+  GPIO_PinModeSet(AMB_port, AMB_pin, gpioModePushPull, false);
 
   /* Clear any pending IRQ */
   NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
@@ -74,6 +71,19 @@ void gpioLed1SetOn()
 void gpioLed1SetOff()
 {
 	GPIO_PinOutClear(LED1_port,LED1_pin);
+}
+
+void gpioAMBSensor(bool value)
+{
+  if(value == true)
+    {
+      GPIO_PinOutSet(AMB_port, AMB_pin);
+    }
+
+  else if(value == false)
+    {
+      GPIO_PinOutClear(AMB_port, AMB_pin);
+    }
 }
 
 void  gpioSetDisplayExtcomin(bool value)

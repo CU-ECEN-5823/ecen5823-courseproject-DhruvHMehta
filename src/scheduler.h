@@ -30,6 +30,19 @@
 void temperatureStateMachine(sl_bt_msg_t *evt);
 
 /***************************************************************************//**
+ * @name ambientLightStateMachine
+ *
+ * @brief Contains the scheduler for the events in the Server which gets
+ *        the ambient light sensor value every second.
+ *
+ * @param[in] sl_bt_msg_t *evt
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void ambientLightStateMachine(sl_bt_msg_t *evt);
+
+/***************************************************************************//**
  * @name discovery_state_machine
  *
  * @brief Contains the scheduler for the events in the Client which connect
@@ -113,5 +126,17 @@ void schedulerSetEvent_ButtonPressed_PB0();
  * @return void
  ******************************************************************************/
 void schedulerSetEvent_ButtonPressed_PB1();
+
+/***************************************************************************//**
+ * @name schedulerSetEvent_ADC0_Single
+ *
+ * @brief Sets the ADC0 Single Mode Conversion Complete event for the server.
+ *
+ * @param[in] none
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void schedulerSetEvent_ADC0_Single();
 
 #endif /* SRC_SCHEDULER_H_ */

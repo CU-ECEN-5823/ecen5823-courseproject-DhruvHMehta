@@ -66,7 +66,7 @@
 /* Energy Mode Select and LED Timing */
 #define LOWEST_ENERGY_MODE  EM2
 #define LETIMER_ON_TIME_MS  175
-#define LETIMER_PERIOD_MS   3000
+#define LETIMER_PERIOD_MS   1000
 
 #define ENABLE  1
 #define DISABLE 0
