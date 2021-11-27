@@ -157,4 +157,29 @@
       </descriptor>
     </characteristic>
   </service>
+  
+  <!--Light Sensing-->
+  <service advertise="true" name="Light Sensing" requirement="mandatory" sourceId="" type="primary" uuid="392167f2-0f9b-413e-87ea-d7d7ed412334">
+    <informativeText/>
+    
+    <!--Ambient Light Analog Value-->
+    <characteristic const="false" id="light_analog_value" name="Ambient Light Analog Value" sourceId="" uuid="d915db84-a51f-45ba-bc5e-422c5c5e63f8">
+      <informativeText/>
+      <value length="1" type="hex" variable_length="false">00</value>
+      <properties>
+        <read authenticated="false" bonded="false" encrypted="false"/>
+        <indicate authenticated="false" bonded="false" encrypted="false"/>
+      </properties>
+      
+      <!--Client Characteristic Configuration-->
+      <descriptor const="false" discoverable="true" id="client_characteristic_configuration_5" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
+        <properties>
+          <read authenticated="false" bonded="false" encrypted="false"/>
+          <write authenticated="false" bonded="false" encrypted="false"/>
+        </properties>
+        <value length="2" type="hex" variable_length="false">00</value>
+        <informativeText/>
+      </descriptor>
+    </characteristic>
+  </service>
 </gatt>

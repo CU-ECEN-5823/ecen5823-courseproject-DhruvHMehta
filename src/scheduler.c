@@ -27,6 +27,8 @@ enum States currentste = OPEN_S1;
 
 void ambientLightStateMachine(sl_bt_msg_t *evt)
 {
+  uint32_t ambient_analog_val;
+
   switch(currentste)
   {
     case POWERUP:
@@ -58,7 +60,11 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
       //if(evt == evtADC0_SINGLE)
         {
           /* Get the converted value */
-          LOG_INFO("ADCval = %d\r\n", ADC_DataSingleGet(ADC0));
+          ambient_analog_val = ADC_DataSingleGet(ADC0);
+          LOG_INFO("ADCval = %d\r\n", ambient_analog_val);
+
+          /* Stub the SendTemperature function with this analog val */
+          SendTemperature(ambient_analog_val);
 
           /* Power down sensor */
           gpioAMBSensor(false);

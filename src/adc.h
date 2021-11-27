@@ -12,4 +12,6 @@
 #include "timers.h"
 #include "gpio.h"
 
+void ADCInit();
+
 #endif /* SRC_ADC_H_ */
