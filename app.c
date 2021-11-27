@@ -116,6 +116,7 @@ SL_WEAK void app_process_action(void)
   //         later assignments.
 
   /* Do nothing */
+  //ambientLightStateMachine();
 }
 
 /**************************************************************************//**

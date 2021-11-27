@@ -14,8 +14,9 @@
 
 #if DEVICE_IS_BLE_SERVER
 enum States{POWERUP, START_CONV, MEASURE};
-enum Events{evtNone, filler, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE};
+enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE};
 enum States currentste = POWERUP;
+enum Events evt = evtNone;
 #else
 enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, CLOSE};
 enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed, evtButtonPressed_PB0, evtButtonPressed_PB1};
@@ -31,17 +32,19 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
     case POWERUP:
       /* Wait for UF event, power up sensor */
       if(evt->data.evt_system_external_signal.extsignals == evtLETIMER0_UF)
+      //if(evt == evtLETIMER0_UF)
         {
           /* Power up Sensor */
           gpioAMBSensor(true);
-          timerWaitUs_irq(30*1000);
+          timerWaitUs_irq(1*1000);
           currentste = START_CONV;
         }
       break;
 
     case START_CONV:
-      /* Wait for 30mS before starting ADC conversion */
+      /* Wait for 1mS before starting ADC conversion */
       if(evt->data.evt_system_external_signal.extsignals == evtLETIMER0_COMP1)
+      //if(evt == evtLETIMER0_COMP1)
         {
           /* Start a Conversion */
           ADC_Start(ADC0, adcStartSingle);
@@ -52,6 +55,7 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
     case MEASURE:
       /* Start ADC Conversion */
       if(evt->data.evt_system_external_signal.extsignals == evtADC0_SINGLE)
+      //if(evt == evtADC0_SINGLE)
         {
           /* Get the converted value */
           LOG_INFO("ADCval = %d\r\n", ADC_DataSingleGet(ADC0));
@@ -61,8 +65,9 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
           currentste = POWERUP;
         }
       break;
-
   }
+
+  //evt = evtNone;
 }
 
 #else
@@ -213,16 +218,19 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 void schedulerSetEvent_UF()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtLETIMER0_UF););
+  //evt = evtLETIMER0_UF;
 }
 
 void schedulerSetEvent_COMP1()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtLETIMER0_COMP1););
+  //evt = evtLETIMER0_COMP1;
 }
 
 void schedulerSetEvent_ADC0_Single()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtADC0_SINGLE););
+  //evt = evtADC0_SINGLE;
 }
 
 void schedulerSetEvent_I2Cdone()
