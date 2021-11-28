@@ -94,8 +94,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
             /* Discover the primary services */
             sc = sl_bt_gatt_discover_primary_services_by_uuid(ble_data->gatt_server_connection,
-                                                              sizeof(ble_data->thermo_service),
-                                                              ble_data->thermo_service);
+                                                              sizeof(ble_data->ambient_service),
+                                                              ble_data->ambient_service);
 
             if (sc != SL_STATUS_OK)
               {
@@ -134,8 +134,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
               /* Discover the characteristics in the HTM Service */
               sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
                                                           ble_data->serviceHandle[0],
-                                                          sizeof(ble_data->thermo_char),
-                                                          ble_data->thermo_char);
+                                                          sizeof(ble_data->ambient_char),
+                                                          ble_data->ambient_char);
               if (sc != SL_STATUS_OK)
                 {
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
@@ -170,7 +170,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
-              /* Enable indications for the HTM Thermometer Measurement Characteristic */
+              /* Enable indications for the Ambient Light Characteristic */
               sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
                                                               ble_data->characteristicHandle[0],
                                                               sl_bt_gatt_indication);

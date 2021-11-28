@@ -44,12 +44,20 @@ static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indicati
                                      .bonding_state = 0};
 struct buffer_data indication_data;
 #else
-static ble_data_struct_t ble_data = {.htm_indications_enabled = 0, .gatt_server_connection = 0,
-                                     .thermo_service = {0x09, 0x18}, .thermo_char = {0x1c, 0x2a},
+static ble_data_struct_t ble_data = {.amb_indications_enabled = 0, .gatt_server_connection = 0,
+
+                                     .ambient_service = {0x34, 0x23, 0x41, 0xed, 0xd7, 0xd7,
+                                     0xea, 0x87, 0x3e, 0x41, 0x9b, 0x0f, 0xf2, 0x67, 0x21, 0x39},
+
+                                     .ambient_char = {0xf8, 0x63, 0x5e, 0x5c, 0x2c, 0x42, 0x5e,
+                                     0xbc, 0xba, 0x45, 0x1f, 0xa5, 0x84, 0xdb, 0x15, 0xd9},
+
                                      .encrypted_service = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65,
                                      0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x01, 0x00, 0x00, 0x00},
+
                                      .encrypted_char = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65,
                                      0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00},
+
                                      .bonding_state = 0, .btn_indications_enabled = sl_bt_gatt_indication};
 #define PASSIVE_SCANNING 0
 #define SCAN_INTERVAL    80
@@ -166,14 +174,14 @@ static uint8_t UUID_Compare(sl_bt_msg_t *evt, uint8_t evttype)
     {
       if(evttype == SERVICE)
         {
-          if(evt->data.evt_gatt_service.uuid.data[i] == ble_data.encrypted_service[i])
+          if(evt->data.evt_gatt_service.uuid.data[i] == ble_data.ambient_service[i])
           {
             uuid_check_counter++;
           }
         }
       else if(evttype == CHARACTERISTIC)
         {
-          if(evt->data.evt_gatt_characteristic.uuid.data[i] == ble_data.encrypted_char[i])
+          if(evt->data.evt_gatt_characteristic.uuid.data[i] == ble_data.ambient_char[i])
           {
             uuid_check_counter++;
           }
@@ -227,9 +235,8 @@ void handle_ble_event(sl_bt_msg_t *evt)
     uint8_t button_val = 0;
 #else
     uint8_t slave_addr_match = 0;
-    uint8_t *float_tempval;
+    uint16_t ambient_lt_val;
     uint8_t client_btn_state;
-    int32_t Client_Temperature;
 #endif
     // Handle stack events
     switch (SL_BT_MSG_ID(evt->header)) {
@@ -762,25 +769,25 @@ void handle_ble_event(sl_bt_msg_t *evt)
       case sl_bt_evt_gatt_service_id:
         // CLIENT
         /* Save the newly discovered service's handle */
-        if(evt->data.evt_gatt_service.uuid.data[0] == ble_data.thermo_service[0] &&
-           evt->data.evt_gatt_service.uuid.data[1] == ble_data.thermo_service[1])
+        if(UUID_Compare(evt, SERVICE))
             ble_data.serviceHandle[0] = evt->data.evt_gatt_service.service;
 
+        /*
         else if(UUID_Compare(evt, SERVICE))
             ble_data.serviceHandle[1] = evt->data.evt_gatt_service.service;
-
+        */
         break;
 
       case sl_bt_evt_gatt_characteristic_id:
         // CLIENT
         /* Save the newly discovered characteristics' handle */
-        if(evt->data.evt_gatt_characteristic.uuid.data[0] == ble_data.thermo_char[0] &&
-           evt->data.evt_gatt_characteristic.uuid.data[1] == ble_data.thermo_char[1])
+        if(UUID_Compare(evt, CHARACTERISTIC))
             ble_data.characteristicHandle[0] = evt->data.evt_gatt_characteristic.characteristic;
 
+        /*
         else if(UUID_Compare(evt, CHARACTERISTIC))
             ble_data.characteristicHandle[1] = evt->data.evt_gatt_characteristic.characteristic;
-
+        */
         break;
 
       case sl_bt_evt_gatt_characteristic_value_id:
@@ -796,13 +803,12 @@ void handle_ble_event(sl_bt_msg_t *evt)
                 LOG_ERROR("sl_bt_gatt_send_characteristic_confirmation() returned != 0 status=0x%04x", (unsigned int) sc);
               }
 
-            float_tempval = &(evt->data.evt_gatt_characteristic_value.value.data[0]);
-            Client_Temperature = gattFloat32ToInt(float_tempval);
+            ambient_lt_val = evt->data.evt_gatt_characteristic_value.value.data[0];
 
-            /* Display Received Temperature on the LCD for the Client */
-            displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", Client_Temperature);
+            /* Display Received Ambient Light Value on the LCD for the Client */
+            displayPrintf(DISPLAY_ROW_TEMPVALUE, "Light=%d", ambient_lt_val);
 
-            LOG_INFO("Received Temperature = %d\r\n", Client_Temperature);
+            LOG_INFO("Received Light value = %d\r\n", ambient_lt_val);
           }
 
         /* If it is an indication or a read response for btn state, display it */

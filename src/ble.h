@@ -38,10 +38,10 @@ typedef struct
 typedef struct
 {
    bd_addr myAddress;               /* Own Address */
-   uint8_t htm_indications_enabled; /* Health Thermometer Indications enabled bool */
+   uint8_t amb_indications_enabled; /* Ambient Light Indications enabled bool */
    uint8_t gatt_server_connection;  /* Connection Handle */
-   uint8_t thermo_service[2];       /* Thermometer Service UUID */
-   uint8_t thermo_char[2];          /* Thermometer Measurement Characteristic UUID */
+   uint8_t ambient_service[16];      /* Thermometer Service UUID */
+   uint8_t ambient_char[16];         /* Thermometer Measurement Characteristic UUID */
    uint8_t encrypted_service[16];   /* Encrypted Service UUID */
    uint8_t encrypted_char[16];      /* Encrypted Characteristic UUID (Button State) */
    uint32_t serviceHandle[2];       /* Service Handle */
