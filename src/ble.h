@@ -22,6 +22,7 @@
 
 #define UINT32_TO_FLOAT(m, e)         (((uint32_t)(m) & 0x00FFFFFFU) | (uint32_t)((int32_t)(e) << 24))
 
+#define AMBIENT 0
 
 #if DEVICE_IS_BLE_SERVER
 typedef struct
@@ -98,5 +99,16 @@ void SendTemperature(float Temperature);
  * @return ble_data_struct_t* - Pointer to instance of ble_data
  ******************************************************************************/
 ble_data_struct_t* getBleDataPtr();
+
+/***************************************************************************//**
+ * @name getSensorValue
+ *
+ * @brief Get the value of the sensor received from the ble indication.
+ *
+ * @param[in] uint8_t sensortype - Type of sensor - AMBIENT/GESTURE
+ *
+ * @return uint16_t - Sensor value as received from indication
+ ******************************************************************************/
+uint16_t getSensorValue(uint8_t sensortype);
 
 #endif /* SRC_BLE_H_ */

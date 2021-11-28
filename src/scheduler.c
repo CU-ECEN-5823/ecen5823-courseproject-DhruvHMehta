@@ -18,7 +18,7 @@ enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE};
 enum States currentste = POWERUP;
 enum Events evt = evtNone;
 #else
-enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, CLOSE};
+enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, UPDATELCD, CLOSE};
 enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed, evtButtonPressed_PB0, evtButtonPressed_PB1};
 enum States currentste = OPEN_S1;
 #endif
@@ -200,8 +200,20 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                 }
 
-              currentste = CLOSE;
+              currentste = UPDATELCD;
             }
+        break;
+
+      case UPDATELCD:
+        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_characteristic_value_id))
+          {
+            /* Check if the ambient light value is below the threshold */
+            if(getSensorValue(AMBIENT) < 50)
+              {
+                /* Turn off the LCD */
+                currentste = CLOSE;
+              }
+          }
         break;
 
         /* Close State, if connection closes, start over */

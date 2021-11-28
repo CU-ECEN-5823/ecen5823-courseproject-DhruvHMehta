@@ -59,6 +59,10 @@ static ble_data_struct_t ble_data = {.amb_indications_enabled = 0, .gatt_server_
                                      0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00},
 
                                      .bonding_state = 0, .btn_indications_enabled = sl_bt_gatt_indication};
+
+/* Initial sensor value to not send the client into low power */
+uint16_t ambient_lt_val = 4095;
+
 #define PASSIVE_SCANNING 0
 #define SCAN_INTERVAL    80
 #define SCAN_WINDOW      40
@@ -225,6 +229,15 @@ static int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)
   return (int32_t) (pow(10, exponent) * mantissa);
 
 } // gattFloat32ToInt
+
+uint16_t getSensorValue(uint8_t sensortype)
+{
+  if(sensortype == AMBIENT)
+    {
+      return ambient_lt_val;
+    }
+}
+
 #endif
 
 void handle_ble_event(sl_bt_msg_t *evt)
@@ -235,7 +248,6 @@ void handle_ble_event(sl_bt_msg_t *evt)
     uint8_t button_val = 0;
 #else
     uint8_t slave_addr_match = 0;
-    uint16_t ambient_lt_val;
     uint8_t client_btn_state;
 #endif
     // Handle stack events
