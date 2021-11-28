@@ -28,7 +28,7 @@ typedef struct
 {
    bd_addr myAddress;               /* Own Address */
    uint8_t advertisingSetHandle;    /* Advertising Handle */
-   uint8_t htm_indications_enabled; /* Health Thermometer Indications enabled bool */
+   uint8_t amb_indications_enabled; /* Health Thermometer Indications enabled bool */
    uint8_t btn_indications_enabled; /* Button state indications enabled */
    uint8_t gatt_server_connection;  /* Connection Handle */
    uint8_t in_flight;               /* Indication in flight */

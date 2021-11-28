@@ -39,7 +39,7 @@ uint8_t isFull;                   /* Flag to indicate buffer full */
 Buffer queue = {.isFull = 0, .rdloc = 0, .wrloc = 0};
 
 // The advertising set handle allocated from Bluetooth stack.
-static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .htm_indications_enabled = 0,
+static ble_data_struct_t ble_data = {.advertisingSetHandle = 0xff, .amb_indications_enabled = 0,
                                      .btn_indications_enabled = 0, .gatt_server_connection = 0,
                                      .bonding_state = 0};
 struct buffer_data indication_data;
@@ -430,7 +430,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
         // SERVER
         /* Reset the connection handle and the indication bool */
         ble_data.gatt_server_connection = 0;
-        ble_data.htm_indications_enabled = 0;
+        ble_data.amb_indications_enabled = 0;
         ble_data.btn_indications_enabled = 0;
         ble_data.in_flight = 0;
 
@@ -557,7 +557,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
       /* GATT Server Characteristic Status ID Event */
       case sl_bt_evt_gatt_server_characteristic_status_id:
 
-       if (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
+       if (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_light_analog_value)
         {
 
            /* Indications have been turned on */
@@ -565,7 +565,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
               evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_indication)
             {
               /* Start reading temperature */
-              ble_data.htm_indications_enabled = 1;
+              ble_data.amb_indications_enabled = 1;
               gpioLed0SetOn();
             }
 
@@ -580,7 +580,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
           else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_disable)
             {
                 displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
-                ble_data.htm_indications_enabled = 0;
+                ble_data.amb_indications_enabled = 0;
                 gpioLed0SetOff();
             }
         }
@@ -978,12 +978,12 @@ void SendTemperature(float Temperature)
   UINT32_TO_BITSTREAM(p, htm_temperature_flt);
 
   /* Write attribute and send indications only if indications are enabled and connection is maintained */
-  if(ble_data.htm_indications_enabled == 1 && ble_data.gatt_server_connection != 0 && ble_data.in_flight == 0)
+  if(ble_data.amb_indications_enabled == 1 && ble_data.gatt_server_connection != 0 && ble_data.in_flight == 0)
     {
 
       // -------------------------------// Write our local GATT DB// -------------------------------
       uint32_t sc = sl_bt_gatt_server_write_attribute_value(
-          gattdb_temperature_measurement, // handle from gatt_db.h
+          gattdb_light_analog_value, // handle from gatt_db.h
           0,                              // offset
           5,                              // length
           &htm_temperature_buffer[0]      // pointer to buffer where data is
@@ -996,7 +996,7 @@ void SendTemperature(float Temperature)
             }
 
           sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
-                                                 gattdb_temperature_measurement,
+                                                 gattdb_light_analog_value,
                                                  5,
                                                  htm_temperature_buffer);
 
@@ -1013,10 +1013,10 @@ void SendTemperature(float Temperature)
 
     }
 
-  else if ((ble_data.gatt_server_connection != 0) && (ble_data.htm_indications_enabled == 1) &&
+  else if ((ble_data.gatt_server_connection != 0) && (ble_data.amb_indications_enabled == 1) &&
           (ble_data.in_flight == 1))
     {
-      indication_data.charHandle   = gattdb_temperature_measurement;
+      indication_data.charHandle   = gattdb_light_analog_value;
       indication_data.bufferLength = 5;
       memcpy(indication_data.buffer, htm_temperature_buffer, 5);
 
