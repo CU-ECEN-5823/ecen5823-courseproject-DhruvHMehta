@@ -815,10 +815,11 @@ void handle_ble_event(sl_bt_msg_t *evt)
                 LOG_ERROR("sl_bt_gatt_send_characteristic_confirmation() returned != 0 status=0x%04x", (unsigned int) sc);
               }
 
-            ambient_lt_val = evt->data.evt_gatt_characteristic_value.value.data[0];
+            ambient_lt_val = (evt->data.evt_gatt_characteristic_value.value.data[0] |
+                             (evt->data.evt_gatt_characteristic_value.value.data[1] << 8));
 
             /* Display Received Ambient Light Value on the LCD for the Client */
-            displayPrintf(DISPLAY_ROW_TEMPVALUE, "Light=%d", ambient_lt_val);
+            displayPrintf(DISPLAY_ROW_ASSIGNMENT, "Light=%d", ambient_lt_val);
 
             LOG_INFO("Received Light value = %d\r\n", ambient_lt_val);
           }
@@ -969,25 +970,12 @@ void handle_ble_event(sl_bt_msg_t *evt)
 }
 
 #if DEVICE_IS_BLE_SERVER
-void SendTemperature(float Temperature)
+void SendLightValue(uint16_t analog_val)
 {
 
   // -------------------------------------------------------------------
   // Update our local GATT DB and send indication if enabled for the characteristic
   // -------------------------------------------------------------------
-
-  uint8_t   htm_temperature_buffer[5];   // Stores the temperature data in the Health Thermometer (HTM) format.
-                                         // format of the buffer is: flags_byte + 4-bytes of IEEE-11073 32-bit float
-  uint8_t   *p = htm_temperature_buffer; // Pointer to HTM temperature buffer needed for converting values to bitstream.
-  uint32_t  htm_temperature_flt;         // Stores the temperature data read from the sensor in the IEEE-11073 32-bit float format
-  uint8_t   flags = 0x00;                // HTM flags set as 0 for Celsius, no time stamp and no temperature type.
-
-  // "bitstream" refers to the order of bytes and bits sent. byte[0] is sent first, followed by byte[1]...
-  UINT8_TO_BITSTREAM(p, flags); // put the flags byte in first, "convert" is a strong word, it places the byte into the buffer
-
-  // Convert sensor data to IEEE-11073 32-bit floating point format.
-  htm_temperature_flt = UINT32_TO_FLOAT(Temperature*1000, -3); // Convert temperature to bitstream and place it in the htm_temperature_buffer
-  UINT32_TO_BITSTREAM(p, htm_temperature_flt);
 
   /* Write attribute and send indications only if indications are enabled and connection is maintained */
   if(ble_data.amb_indications_enabled == 1 && ble_data.gatt_server_connection != 0 && ble_data.in_flight == 0)
@@ -997,8 +985,8 @@ void SendTemperature(float Temperature)
       uint32_t sc = sl_bt_gatt_server_write_attribute_value(
           gattdb_light_analog_value, // handle from gatt_db.h
           0,                              // offset
-          5,                              // length
-          &htm_temperature_buffer[0]      // pointer to buffer where data is
+          2,                              // length
+          &analog_val                     // pointer to buffer where data is
       );
 
         {
@@ -1009,8 +997,8 @@ void SendTemperature(float Temperature)
 
           sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
                                                  gattdb_light_analog_value,
-                                                 5,
-                                                 htm_temperature_buffer);
+                                                 2,
+                                                 &analog_val);
 
           ble_data.in_flight = 1;
           if (sc != SL_STATUS_OK)
@@ -1020,7 +1008,7 @@ void SendTemperature(float Temperature)
             }
 
           /* Update Temperature on the LCD */
-          displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temp=%d", (int) Temperature);
+          displayPrintf(DISPLAY_ROW_TEMPVALUE, "Ambient Light=%d", analog_val);
         }
 
     }
@@ -1029,8 +1017,8 @@ void SendTemperature(float Temperature)
           (ble_data.in_flight == 1))
     {
       indication_data.charHandle   = gattdb_light_analog_value;
-      indication_data.bufferLength = 5;
-      memcpy(indication_data.buffer, htm_temperature_buffer, 5);
+      indication_data.bufferLength = 2;
+      memcpy(indication_data.buffer, &analog_val, 2);
 
       if((cbfifo_enqueue(&queue, &indication_data)) == -1)
         LOG_ERROR("Queue full, discarding event\r\n");

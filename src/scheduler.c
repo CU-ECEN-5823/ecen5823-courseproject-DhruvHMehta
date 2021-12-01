@@ -63,8 +63,8 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
           ambient_analog_val = ADC_DataSingleGet(ADC0);
           LOG_INFO("ADCval = %d\r\n", ambient_analog_val);
 
-          /* Stub the SendTemperature function with this analog val */
-          SendTemperature(ambient_analog_val);
+          /* Send the analog light value to the Client as an indication */
+          SendLightValue(ambient_analog_val);
 
           /* Power down sensor */
           gpioAMBSensor(false);
@@ -147,6 +147,10 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
         /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
       case CHARACTERISTICS_S2:
+
+        /* Stubbing this state and moving to NOTIFY_S1 */
+        currentste = NOTIFY_S1;
+
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
@@ -187,6 +191,10 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
         /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
       case NOTIFY_S2:
+
+        /* Stubbing this state and moving to UPDATE_LCD */
+        currentste = UPDATELCD;
+
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
@@ -205,15 +213,43 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         break;
 
       case UPDATELCD:
-        if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_characteristic_value_id))
-          {
+        //if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_characteristic_value_id))
+          //{
             /* Check if the ambient light value is below the threshold */
             if(getSensorValue(AMBIENT) < 50)
               {
                 /* Turn off the LCD */
                 currentste = CLOSE;
               }
-          }
+
+            else
+              {
+                /* Update the LCD based on gesture obtained
+                switch(getSensorValue(GESTURE))
+                {
+                  case LEFT:
+                    nextPage();
+                    break;
+
+                  case RIGHT:
+                    prevPage();
+                    break;
+
+                  case UP:
+                    scrollUp();
+                    break;
+
+                  case DOWN:
+                    scrollDown();
+                    break;
+                }
+                */
+                if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB1)
+                  scrollUp();
+
+                PrintDisplay();
+              }
+          //}
         break;
 
         /* Close State, if connection closes, start over */
