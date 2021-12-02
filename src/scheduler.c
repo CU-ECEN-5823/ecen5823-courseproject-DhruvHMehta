@@ -193,6 +193,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
       case NOTIFY_S2:
 
         /* Stubbing this state and moving to UPDATE_LCD */
+        PrintDisplay();
         currentste = UPDATELCD;
 
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
@@ -209,6 +210,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                 }
 
               currentste = UPDATELCD;
+
             }
         break;
 
@@ -245,9 +247,15 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                 }
                 */
                 if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB1)
-                  scrollUp();
-
-                PrintDisplay();
+                  {
+                    nextPage();
+                    PrintDisplay();
+                  }
+                else if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB0)
+                  {
+                   prevPage();
+                   PrintDisplay();
+                  }
               }
           //}
         break;
