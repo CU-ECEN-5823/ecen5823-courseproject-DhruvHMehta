@@ -33,6 +33,9 @@ void gpioInit()
   GPIO_DriveStrengthSet(AMB_port, gpioDriveStrengthStrongAlternateStrong);
   GPIO_PinModeSet(AMB_port, AMB_pin, gpioModePushPull, false);
 
+
+ GPIO_PinModeSet(PF0_port, PF0_pin, gpioModeInputPullFilter, true);
+  GPIO_ExtIntConfig(PF0_port, PF0_pin, PF0_pin, false, true, true); // PF0 (Pin24 on gecko board) configured for external interrupt APDS9960
   /* Clear any pending IRQ */
   NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
   NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);

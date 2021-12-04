@@ -26,6 +26,7 @@
 I2C_TransferReturn_TypeDef I2CTransferReturn;
 /* Keeps count of time passed since the system startup */
 static uint32_t milliseconds;
+uint8_t gestureFlag;
 
 
 /***************************************************************************//**
@@ -134,7 +135,11 @@ void GPIO_EVEN_IRQHandler()
     {
       schedulerSetEvent_ButtonPressed();
     }
-
+  else if(flags == (1 << PF0_pin))
+  {
+    gestureFlag = 1;
+    schedulerSetEvent_GestureInt();
+  }
 }
 
 void ADC0_IRQHandler()

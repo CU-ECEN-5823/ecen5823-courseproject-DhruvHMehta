@@ -39,6 +39,10 @@
 #define AMB_port   gpioPortD
 #define AMB_pin    10
 
+#define PF0_port   gpioPortF
+#define PF0_pin    0
+
+
 // Function prototypes
 void gpioInit();
 void gpioLed0SetOn();

@@ -139,4 +139,16 @@ void schedulerSetEvent_ButtonPressed_PB1();
  ******************************************************************************/
 void schedulerSetEvent_ADC0_Single();
 
+/***************************************************************************//**
+ * @name schedulerSetEvent_GestureInt
+ *
+ * @brief Sets when Interrupt from the gesture sensor.
+ *
+ * @param[in] none
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void schedulerSetEvent_GestureInt();
+
 #endif /* SRC_SCHEDULER_H_ */

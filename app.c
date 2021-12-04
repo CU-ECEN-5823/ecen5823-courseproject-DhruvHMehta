@@ -42,7 +42,7 @@
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
-
+extern uint8_t gestureFlag;
 
 
 /*****************************************************************************
@@ -87,10 +87,31 @@ SL_WEAK void app_init(void)
   // Student Edit: Add a call to gpioInit() here
   gpioInit();
   OscillatorInit();
-  I2CInit();
+  //I2CInit();
   LETIMER0Init();
   LETIMER0InterruptEn();
-  ADCInit();
+
+  //I2CInit_gesture();
+  gesture_init();
+  enableGestureSensor(true);
+  while(1)
+    {
+      if(gestureFlag)
+        {
+          NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+          //LOG_INFO("Gesture = %d\r\n", gesturenum);
+          int gesturenum = readGesture();
+              //readGesture();
+          gestureFlag = 0;
+          timerWaitUs_polled(100*1000);
+          NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+          //LOG_INFO("Gesture = %d\r\n", gesturenum);
+        }
+    }
+
+
+
+  //ADCInit();
 
 #if (LOWEST_ENERGY_MODE == EM0)
   /* No em requirement */

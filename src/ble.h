@@ -23,7 +23,7 @@
 #define UINT32_TO_FLOAT(m, e)         (((uint32_t)(m) & 0x00FFFFFFU) | (uint32_t)((int32_t)(e) << 24))
 
 #define AMBIENT 0
-#define GESTURE 1
+#define GESTURE_SNSR 1
 
 #define LEFT  0
 #define RIGHT 1

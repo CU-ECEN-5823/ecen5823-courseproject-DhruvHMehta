@@ -14,7 +14,7 @@
 
 #if DEVICE_IS_BLE_SERVER
 enum States{POWERUP, START_CONV, MEASURE};
-enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE};
+enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE, evtGestureInt};
 enum States currentste = POWERUP;
 enum Events evt = evtNone;
 #else
@@ -303,6 +303,11 @@ void schedulerSetEvent_I2Cdone()
 void schedulerSetEvent_ButtonPressed()
 {
   ;
+}
+
+void schedulerSetEvent_GestureInt()
+{
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtGestureInt););
 }
 #else
 void schedulerSetEvent_ButtonPressed_PB0()
