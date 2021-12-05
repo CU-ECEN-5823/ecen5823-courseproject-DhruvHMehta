@@ -21,7 +21,7 @@
 
 #if DEVICE_IS_BLE_SERVER
 #define SIZE (16)           /* Size of Buffer */
-#define EXTSIGEVENT 4
+#define EXTSIGEVENT 5
 
 struct buffer_data{
   uint16_t charHandle;      /* Characteristic handle from GATTdb */
@@ -443,7 +443,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
         /* Reset the connection handle and the indication bool */
         ble_data.gatt_server_connection = 0;
         ble_data.amb_indications_enabled = 0;
-        ble_data.btn_indications_enabled = 0;
+        ble_data.gesture_indications_enabled = 0;
         ble_data.in_flight = 0;
 
         //LOG_INFO("Connection closed\r\n");
@@ -597,7 +597,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
             }
         }
 
-       else if (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_button_state)
+       else if (evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_gesture)
          {
 
            /* Indications for button state have been turned on */
@@ -605,7 +605,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_indication)
              {
                /* Read button state */
-               ble_data.btn_indications_enabled = 1;
+               ble_data.gesture_indications_enabled = 1;
                gpioLed1SetOn();
              }
 
@@ -619,7 +619,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
            /* Indications have been turned off */
            else if (evt->data.evt_gatt_server_characteristic_status.client_config_flags == sl_bt_gatt_disable)
              {
-                 ble_data.btn_indications_enabled = 0;
+                 ble_data.gesture_indications_enabled = 0;
                  gpioLed1SetOff();
              }
          }
@@ -643,7 +643,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                     LOG_ERROR("sl_bt_sm_passkey_confirm() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
                   }
               }
-
+#if 0
             /* Check the button state */
             button_val = GPIO_PinInGet(gpioPortF, PB0_pin);
 
@@ -699,6 +699,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                 if((cbfifo_enqueue(&queue, &indication_data)) == -1)
                   LOG_ERROR("Queue full, discarding event\r\n");
               }
+#endif
           }
         break;
 
@@ -1019,6 +1020,63 @@ void SendLightValue(uint16_t analog_val)
       indication_data.charHandle   = gattdb_light_analog_value;
       indication_data.bufferLength = 2;
       memcpy(indication_data.buffer, &analog_val, 2);
+
+      if((cbfifo_enqueue(&queue, &indication_data)) == -1)
+        LOG_ERROR("Queue full, discarding event\r\n");
+    }
+
+}
+
+/*Send Gesture value to the Client*/
+void send_gesture_value(uint8_t gesture_val)
+{
+
+  // -------------------------------------------------------------------
+  // Update our local GATT DB and send indication if enabled for the characteristic
+  // -------------------------------------------------------------------
+
+  /* Write attribute and send indications only if indications are enabled and connection is maintained */
+  if(ble_data.gesture_indications_enabled == 1 && ble_data.gatt_server_connection != 0 && ble_data.in_flight == 0)
+    {
+
+      // -------------------------------// Write our local GATT DB// -------------------------------
+      uint32_t sc = sl_bt_gatt_server_write_attribute_value(
+          gattdb_gesture, // handle from gatt_db.h
+          0,                              // offset
+          1,                              // length
+          &gesture_val                     // pointer to buffer where data is
+      );
+
+        {
+          if (sc != SL_STATUS_OK)
+            {
+              LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+            }
+
+          sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
+                                                 gattdb_gesture,
+                                                 1,
+                                                 &gesture_val);
+
+          ble_data.in_flight = 1;
+          if (sc != SL_STATUS_OK)
+            {
+              LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
+              ble_data.in_flight = 0;
+            }
+
+          /* Update Temperature on the LCD */
+          displayPrintf(DISPLAY_ROW_8, "Gesture_Value = %d", gesture_val);
+        }
+
+    }
+
+  else if ((ble_data.gatt_server_connection != 0) && (ble_data.gesture_indications_enabled == 1) &&
+          (ble_data.in_flight == 1))
+    {
+      indication_data.charHandle   = gattdb_gesture;
+      indication_data.bufferLength = 1;
+      memcpy(indication_data.buffer, &gesture_val, 1);
 
       if((cbfifo_enqueue(&queue, &indication_data)) == -1)
         LOG_ERROR("Queue full, discarding event\r\n");

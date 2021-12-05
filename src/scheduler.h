@@ -151,4 +151,17 @@ void schedulerSetEvent_ADC0_Single();
  ******************************************************************************/
 void schedulerSetEvent_GestureInt();
 
+/***************************************************************************//**
+ * @name gesture_main
+ *
+ * @brief Contains the scheduler for the events in the Server which gets
+ *        the gesture when interrupt event occurs.
+ *
+ * @param[in] sl_bt_msg_t *evt
+ *
+ *
+ * @return void
+ ******************************************************************************/
+void gesture_main(sl_bt_msg_t *evt);
+
 #endif /* SRC_SCHEDULER_H_ */

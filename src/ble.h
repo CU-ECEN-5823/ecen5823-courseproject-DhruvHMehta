@@ -37,6 +37,7 @@ typedef struct
    uint8_t advertisingSetHandle;    /* Advertising Handle */
    uint8_t amb_indications_enabled; /* Health Thermometer Indications enabled bool */
    uint8_t btn_indications_enabled; /* Button state indications enabled */
+   uint8_t gesture_indications_enabled; /*Gesture sensor indications enabled */
    uint8_t gatt_server_connection;  /* Connection Handle */
    uint8_t in_flight;               /* Indication in flight */
    uint8_t bonding_state;           /* Bonded = 1/ Not bonded = 0 */
@@ -90,6 +91,30 @@ void handle_ble_event(sl_bt_msg_t *evt);
  * @return void
  ******************************************************************************/
 void SendTemperature(float Temperature);
+
+/***************************************************************************//**
+ * @name send_gesture_value
+ *
+ * @brief Sends the gesture value from I2C to BLE for writing and sending
+ *        indications to the Client when indications are enabled.
+ *
+ * @param[in] uint8_t gesture_val - value
+ *
+ * @return void
+ ******************************************************************************/
+void send_gesture_value(uint8_t gesture_val);
+
+/***************************************************************************//**
+ * @name SendLightValue
+ *
+ * @brief Sends the ambient light value from ADC to BLE for writing and sending
+ *        indications to the Client when indications are enabled.
+ *
+ * @param[in] uint16_t analog_val - Light value
+ *
+ * @return void
+ ******************************************************************************/
+void SendLightValue(uint16_t analog_val);
 
 /***************************************************************************//**
  * @name getBleDataPtr

@@ -14,7 +14,7 @@
 
 #if DEVICE_IS_BLE_SERVER
 enum States{POWERUP, START_CONV, MEASURE};
-enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE, evtGestureInt};
+enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE, evtButtonPressed, evtGestureInt};
 enum States currentste = POWERUP;
 enum Events evt = evtNone;
 #else
@@ -74,6 +74,23 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
   }
 
   //evt = evtNone;
+}
+
+void gesture_main(sl_bt_msg_t *evt){
+  if(evt->data.evt_system_external_signal.extsignals == evtGestureInt)
+        {
+          NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+          uint8_t gesturenum = readGesture();
+          if(gesturenum > 0){
+          send_gesture_value(gesturenum);
+          }
+             // readGesture();
+          //gestureFlag = 0;
+
+          timerWaitUs_polled(100*1000);
+          NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+          //LOG_INFO("Gesture = %d\r\n", gesturenum);
+        }
 }
 
 #else
@@ -302,7 +319,7 @@ void schedulerSetEvent_I2Cdone()
 
 void schedulerSetEvent_ButtonPressed()
 {
-  ;
+  CORE_CRITICAL_SECTION(sl_bt_external_signal(evtButtonPressed););
 }
 
 void schedulerSetEvent_GestureInt()

@@ -182,4 +182,29 @@
       </descriptor>
     </characteristic>
   </service>
+  
+  <!--Gesture Encryption Sensing-->
+  <service advertise="true" name="Gesture Encryption Sensing" requirement="mandatory" sourceId="" type="primary" uuid="b79d7d02-9a4b-4bf2-918f-00217671b2fa">
+    <informativeText/>
+    
+    <!--Gesture Value-->
+    <characteristic const="false" id="gesture" name="Gesture Value" sourceId="" uuid="5791054f-e599-4f81-bd95-e7b93fabd1a5">
+      <informativeText/>
+      <value length="1" type="hex" variable_length="false">00</value>
+      <properties>
+        <read authenticated="false" bonded="true" encrypted="false"/>
+        <indicate authenticated="false" bonded="true" encrypted="false"/>
+      </properties>
+      
+      <!--Client Characteristic Configuration-->
+      <descriptor const="false" discoverable="true" id="client_characteristic_configuration" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
+        <properties>
+          <read authenticated="false" bonded="false" encrypted="false"/>
+          <write authenticated="false" bonded="false" encrypted="false"/>
+        </properties>
+        <value length="1" type="hex" variable_length="false">00</value>
+        <informativeText/>
+      </descriptor>
+    </characteristic>
+  </service>
 </gatt>

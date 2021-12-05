@@ -42,7 +42,7 @@
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
-extern uint8_t gestureFlag;
+//extern uint8_t gestureFlag;
 
 
 /*****************************************************************************
@@ -94,7 +94,7 @@ SL_WEAK void app_init(void)
   //I2CInit_gesture();
   gesture_init();
   enableGestureSensor(true);
-  while(1)
+  /*while(1)
     {
       if(gestureFlag)
         {
@@ -107,7 +107,8 @@ SL_WEAK void app_init(void)
           NVIC_EnableIRQ(GPIO_EVEN_IRQn);
           //LOG_INFO("Gesture = %d\r\n", gesturenum);
         }
-    }
+    }*/
+
 
 
 
@@ -161,6 +162,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
   // sequence through states driven by events
      ambientLightStateMachine(evt);
    //temperatureStateMachine(evt);    // put this code in scheduler.c/.h
+      gesture_main(evt);
 #else
    // sequence through service and characteristic discovery
    discovery_state_machine(evt);    // put this code in scheduler.c/.h
