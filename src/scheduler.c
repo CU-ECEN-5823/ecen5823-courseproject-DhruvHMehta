@@ -265,12 +265,12 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                 */
                 if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB1)
                   {
-                    nextPage();
+                    scrollDown();
                     PrintDisplay();
                   }
                 else if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB0)
                   {
-                   prevPage();
+                    scrollUp();
                    PrintDisplay();
                   }
               }

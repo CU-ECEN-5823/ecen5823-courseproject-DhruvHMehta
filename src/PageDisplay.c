@@ -35,6 +35,26 @@ char *currentPos;
 uint8_t pageCount;
 char *pageBreak[sizeof(char *)*64];
 
+static void revString(char str[])
+{
+// Find length of string
+int len = strlen(str);
+// Initialize variable
+int i;
+
+// Swap ith to (len - i -1)th character
+for(i=0; i < len/2; ++i)
+{
+//Use str[len] as temp variable
+str[len] = str[i];
+str[i] = str[len-i-1];
+str[len-i-1] = str[len];
+}
+
+//Assign null character back
+str[len] = '\0';
+}
+
 void PrintDisplay()
 {
   char *newline;
@@ -129,6 +149,53 @@ void scrollUp()
 
     for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
       displayPrintf(i, " ");
+}
+
+void scrollDown()
+{
+  char *oldline;
+  char *newline;
+  int lineCount = 0, sameLineFlag = 0;
+  int byteDiff = 0;
+
+  char *cpystring = malloc(sizeof(char)*(currentPos - Book1 + 2));
+  if(cpystring == NULL)
+    return;
+
+  strncpy(cpystring, Book1, (currentPos - Book1 + 1));
+  cpystring[currentPos - Book1 + 2] = '\0';
+
+  revString(cpystring);
+  oldline = cpystring;
+  newline = strchr(cpystring, '\n');
+
+  while(lineCount != 2 && newline != NULL)
+    {
+      if(newline - oldline > DISPLAY_ROW_LEN - 2)
+        {
+          newline = oldline + DISPLAY_ROW_LEN - 2;
+          sameLineFlag = 1;
+        }
+
+      if(sameLineFlag)
+        {
+          oldline = newline;
+          sameLineFlag = 0;
+        }
+
+      else oldline = newline + 1;
+
+      newline = strchr(Book1 + (oldline - Book1), '\n');
+      lineCount++;
+    }
+
+  byteDiff = (newline + 1) - cpystring;
+  if(byteDiff < 0 || byteDiff > (int)strlen(cpystring))
+    currentPos = Book1;
+
+  else currentPos -= byteDiff;
+  free(cpystring);
+
 }
 
 void nextPage()
