@@ -90,6 +90,7 @@ SL_WEAK void app_init(void)
   //I2CInit();
   LETIMER0Init();
   LETIMER0InterruptEn();
+  ADCInit();
 
   //I2CInit_gesture();
   gesture_init();
