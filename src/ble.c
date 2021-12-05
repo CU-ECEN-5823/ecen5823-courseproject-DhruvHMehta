@@ -52,16 +52,17 @@ static ble_data_struct_t ble_data = {.amb_indications_enabled = 0, .gatt_server_
                                      .ambient_char = {0xf8, 0x63, 0x5e, 0x5c, 0x2c, 0x42, 0x5e,
                                      0xbc, 0xba, 0x45, 0x1f, 0xa5, 0x84, 0xdb, 0x15, 0xd9},
 
-                                     .encrypted_service = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65,
-                                     0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x01, 0x00, 0x00, 0x00},
+                                     .gesture_service = {0xfa, 0xb2, 0x71, 0x76, 0x21, 0x00,
+                                     0x8f, 0x91, 0xf2, 0x4b, 0x4b, 0x9a, 0x02, 0x7d, 0x9d, 0xb7},
 
-                                     .encrypted_char = {0x89, 0x62, 0x13, 0x2d, 0x2a, 0x65,
-                                     0xec, 0x87, 0x3e, 0x43, 0xc8, 0x38, 0x02, 0x00, 0x00, 0x00},
+                                     .gesture_char = {0xa5, 0xd1, 0xab, 0x3f, 0xb9, 0xe7,
+                                     0x95, 0xbd, 0x81, 0x4f, 0x99, 0xe5, 0x4f, 0x05, 0x91, 0x57},
 
-                                     .bonding_state = 0, .btn_indications_enabled = sl_bt_gatt_indication};
+                                     .bonding_state = 0};
 
 /* Initial sensor value to not send the client into low power */
 uint16_t ambient_lt_val = 4095;
+uint8_t gesture_val = 0;
 
 #define PASSIVE_SCANNING 0
 #define SCAN_INTERVAL    80
@@ -75,9 +76,6 @@ uint16_t ambient_lt_val = 4095;
 
 #define EXTSIGEVENT_PB0 4
 #define EXTSIGEVENT_PB1 5
-#define NOT_BONDED  0
-#define BONDING     1
-#define BONDED      2
 #define SM_CONFIG_FLAGS 0x0F
 #define MIN_MAX_INTERVAL  60
 #define SLAVE_LATENCY     3
@@ -168,7 +166,7 @@ static uint8_t check_slave_addr(sl_bt_msg_t *evt)
   return 0;
 }
 
-static uint8_t UUID_Compare(sl_bt_msg_t *evt, uint8_t evttype)
+static uint8_t UUID_Compare(sl_bt_msg_t *evt, uint8_t evttype, uint8_t sensortype)
 {
   /* Get the address from the macro and save it */
   uint8_t uuid_check_counter = 0;
@@ -178,17 +176,39 @@ static uint8_t UUID_Compare(sl_bt_msg_t *evt, uint8_t evttype)
     {
       if(evttype == SERVICE)
         {
-          if(evt->data.evt_gatt_service.uuid.data[i] == ble_data.ambient_service[i])
-          {
-            uuid_check_counter++;
-          }
+          if(sensortype == AMBIENT)
+            {
+              if(evt->data.evt_gatt_service.uuid.data[i] == ble_data.ambient_service[i])
+                {
+                  uuid_check_counter++;
+                }
+            }
+
+          else if(sensortype == GESTURE_SNSR)
+            {
+              if(evt->data.evt_gatt_service.uuid.data[i] == ble_data.gesture_service[i])
+                {
+                  uuid_check_counter++;
+                }
+            }
         }
       else if(evttype == CHARACTERISTIC)
         {
-          if(evt->data.evt_gatt_characteristic.uuid.data[i] == ble_data.ambient_char[i])
-          {
-            uuid_check_counter++;
-          }
+          if(sensortype == AMBIENT)
+            {
+              if(evt->data.evt_gatt_characteristic.uuid.data[i] == ble_data.ambient_char[i])
+              {
+                uuid_check_counter++;
+              }
+            }
+
+          else if(sensortype == GESTURE_SNSR)
+            {
+              if(evt->data.evt_gatt_characteristic.uuid.data[i] == ble_data.gesture_char[i])
+                {
+                  uuid_check_counter++;
+                }
+            }
         }
     }
 
@@ -232,10 +252,18 @@ static int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)
 
 uint16_t getSensorValue(uint8_t sensortype)
 {
+  uint8_t returnval;
+
   if(sensortype == AMBIENT)
-    {
       return ambient_lt_val;
+
+  else if(sensortype == GESTURE_SNSR)
+    {
+      returnval = gesture_val;
+      gesture_val = 0;
     }
+
+  return returnval;
 }
 
 #endif
@@ -782,25 +810,23 @@ void handle_ble_event(sl_bt_msg_t *evt)
       case sl_bt_evt_gatt_service_id:
         // CLIENT
         /* Save the newly discovered service's handle */
-        if(UUID_Compare(evt, SERVICE))
+        if(UUID_Compare(evt, SERVICE, AMBIENT))
             ble_data.serviceHandle[0] = evt->data.evt_gatt_service.service;
 
-        /*
-        else if(UUID_Compare(evt, SERVICE))
+        else if(UUID_Compare(evt, SERVICE, GESTURE_SNSR))
             ble_data.serviceHandle[1] = evt->data.evt_gatt_service.service;
-        */
+
         break;
 
       case sl_bt_evt_gatt_characteristic_id:
         // CLIENT
         /* Save the newly discovered characteristics' handle */
-        if(UUID_Compare(evt, CHARACTERISTIC))
+        if(UUID_Compare(evt, CHARACTERISTIC, AMBIENT))
             ble_data.characteristicHandle[0] = evt->data.evt_gatt_characteristic.characteristic;
 
-        /*
-        else if(UUID_Compare(evt, CHARACTERISTIC))
+        else if(UUID_Compare(evt, CHARACTERISTIC, GESTURE_SNSR))
             ble_data.characteristicHandle[1] = evt->data.evt_gatt_characteristic.characteristic;
-        */
+
         break;
 
       case sl_bt_evt_gatt_characteristic_value_id:
@@ -820,7 +846,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                              (evt->data.evt_gatt_characteristic_value.value.data[1] << 8));
 
             /* Display Received Ambient Light Value on the LCD for the Client */
-            displayPrintf(DISPLAY_ROW_ASSIGNMENT, "Light=%d", ambient_lt_val);
+            //displayPrintf(DISPLAY_ROW_ASSIGNMENT, "Light=%d", ambient_lt_val);
 
             LOG_INFO("Received Light value = %d\r\n", ambient_lt_val);
           }
@@ -840,16 +866,10 @@ void handle_ble_event(sl_bt_msg_t *evt)
                     LOG_ERROR("sl_bt_gatt_send_characteristic_confirmation() returned != 0 status=0x%04x", (unsigned int) sc);
                   }
               }
-            client_btn_state = evt->data.evt_gatt_characteristic_value.value.data[0];
-
-            if(client_btn_state == 1)
-                displayPrintf(DISPLAY_ROW_9, "Button Pressed");
-
-            else if(client_btn_state == 0)
-              displayPrintf(DISPLAY_ROW_9, "Button Released");
-
-            LOG_INFO("Button State = %s\r\n", client_btn_state ? "Button Pressed" : "Button Released");
+            gesture_val = evt->data.evt_gatt_characteristic_value.value.data[0];
+            LOG_INFO("Gesture received = %d\r\n", gesture_val);
           }
+        displayPrintf(DISPLAY_ROW_ASSIGNMENT, "Light=%d Gesture=%d", ambient_lt_val, gesture_val);
         break;
 
       case sl_bt_evt_gatt_procedure_completed_id:
@@ -892,23 +912,6 @@ void handle_ble_event(sl_bt_msg_t *evt)
                  if (sc != SL_STATUS_OK)
                    {
                      LOG_ERROR("sl_bt_gatt_read_characteristic_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
-                   }
-               }
-
-             /* PB0 Button is pressed, toggle indications */
-             else if(GPIO_PinInGet(gpioPortF, PB0_pin) == 0)
-               {
-
-                 /* Flip indications for the Btn_State Characteristic */
-
-                 ble_data.btn_indications_enabled ^= 2; // Second bit is flipped to turn on/off indications */
-                 sc = sl_bt_gatt_set_characteristic_notification(ble_data.gatt_server_connection,
-                                                                 ble_data.characteristicHandle[1],
-                                                                 ble_data.btn_indications_enabled);
-
-                 if (sc != SL_STATUS_OK)
-                   {
-                     LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                    }
                }
            }
@@ -991,11 +994,12 @@ void SendLightValue(uint16_t analog_val)
       );
 
         {
+        /*
           if (sc != SL_STATUS_OK)
             {
               LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
             }
-
+        */
           sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
                                                  gattdb_light_analog_value,
                                                  2,
@@ -1048,6 +1052,7 @@ void send_gesture_value(uint8_t gesture_val)
       );
 
         {
+
           if (sc != SL_STATUS_OK)
             {
               LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);

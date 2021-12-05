@@ -18,7 +18,7 @@ enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE, evtB
 enum States currentste = POWERUP;
 enum Events evt = evtNone;
 #else
-enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, UPDATELCD, CLOSE};
+enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, INITLCD, UPDATELCD, CLOSE};
 enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed, evtButtonPressed_PB0, evtButtonPressed_PB1};
 enum States currentste = OPEN_S1;
 #endif
@@ -131,8 +131,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
               /* Discover the primary services */
               sc = sl_bt_gatt_discover_primary_services_by_uuid(ble_data->gatt_server_connection,
-                                                                sizeof(ble_data->encrypted_service),
-                                                                ble_data->encrypted_service);
+                                                                sizeof(ble_data->gesture_service),
+                                                                ble_data->gesture_service);
 
               if (sc != SL_STATUS_OK)
                 {
@@ -165,17 +165,14 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
       case CHARACTERISTICS_S2:
 
-        /* Stubbing this state and moving to NOTIFY_S1 */
-        currentste = NOTIFY_S1;
-
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Discover the characteristics in the Btn Service */
               sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
                                                           ble_data->serviceHandle[1],
-                                                          sizeof(ble_data->encrypted_char),
-                                                          ble_data->encrypted_char);
+                                                          sizeof(ble_data->gesture_char),
+                                                          ble_data->gesture_char);
 
               if (sc != SL_STATUS_OK)
                 {
@@ -209,10 +206,6 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
       case NOTIFY_S2:
 
-        /* Stubbing this state and moving to UPDATE_LCD */
-        PrintDisplay();
-        currentste = UPDATELCD;
-
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
@@ -226,9 +219,18 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                 }
 
-              currentste = UPDATELCD;
+              currentste = INITLCD;
 
             }
+        break;
+
+        /* INITLCD State, Print the initial LCD display once bonded */
+      case INITLCD:
+        if(ble_data->bonding_state == BONDED)
+          {
+            PrintDisplay();
+            currentste = UPDATELCD;
+          }
         break;
 
       case UPDATELCD:
@@ -243,26 +245,30 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
             else
               {
-                /* Update the LCD based on gesture obtained
-                switch(getSensorValue(GESTURE))
+                /* Update the LCD based on gesture obtained */
+                switch(getSensorValue(GESTURE_SNSR))
                 {
                   case LEFT:
                     nextPage();
+                    PrintDisplay();
                     break;
 
                   case RIGHT:
                     prevPage();
+                    PrintDisplay();
                     break;
 
                   case UP:
                     scrollUp();
+                    PrintDisplay();
                     break;
 
                   case DOWN:
                     scrollDown();
+                    PrintDisplay();
                     break;
                 }
-                */
+                /*
                 if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB1)
                   {
                     scrollDown();
@@ -273,6 +279,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                     scrollUp();
                    PrintDisplay();
                   }
+                  */
               }
           //}
         break;
