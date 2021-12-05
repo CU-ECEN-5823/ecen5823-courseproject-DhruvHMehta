@@ -55,6 +55,7 @@
 #include "src/i2c.h"
 #include "src/scheduler.h"
 #include "src/ble.h"
+#include "src/gesture_main.h"
 #include "src/adc.h"
 
 /* Macros for Energy Modes */
@@ -70,6 +71,8 @@
 
 #define ENABLE  1
 #define DISABLE 0
+
+#define GESTURE_CODE 1
 
 // See: https://docs.silabs.com/gecko-platform/latest/service/power_manager/overview
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)

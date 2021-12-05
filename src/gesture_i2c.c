@@ -13,6 +13,9 @@
 #include "em_i2c.h"
 #include "gesture_i2c.h"
 
+#define INCLUDE_LOG_DEBUG 1
+#include "src/log.h"
+
   /*******************************************************************************
    **************************   GLOBAL FUNCTIONS   *******************************
    ******************************************************************************/
@@ -26,7 +29,7 @@
     I2C_TransferReturn_TypeDef ret;
     uint8_t i2c_write_data[1];
 
-    seq.addr  = addr;
+    seq.addr  = (addr << 1);
     seq.flags = I2C_FLAG_WRITE_READ;
     /* Select register to start reading from */
     i2c_write_data[0] = reg;
@@ -37,12 +40,21 @@
     seq.buf[1].len  = 1;
 
     ret = I2CSPM_Transfer(i2c, &seq);
+    if(ret == 0)
+         {
+          //LOG_INFO (" bytes read\r\n");
+         }
+       else
+         {
+           LOG_ERROR (" bytes is not written due to returned value was %d: gesture_Read_Register\r\n",ret);
+         }
+
     if (ret != i2cTransferDone)
     {
       *data = 0xff;
       return (uint32_t)ret;
     }
-    return (uint32_t)0;
+    return (uint32_t)1;
   }
 
   /**************************************************************************/
@@ -53,7 +65,7 @@
     uint8_t i2c_write_data[2];
     uint8_t i2c_read_data[1];
 
-    seq.addr  = addr;
+    seq.addr  = (addr << 1);
     seq.flags = I2C_FLAG_WRITE;
     /* Select register and data to write */
     i2c_write_data[0] = reg;
@@ -64,11 +76,22 @@
     seq.buf[1].len  = 0;
 
     ret = I2CSPM_Transfer(i2c, &seq);
+
+    if(ret == 0)
+             {
+              //LOG_INFO (" bytes read\r\n");
+             }
+           else
+             {
+               LOG_ERROR (" bytes is not written due to returned value was %d: gesture_Write_Register\r\n",ret);
+             }
+
+
     if (ret != i2cTransferDone)
     {
       return (uint32_t)ret;
     }
-    return (uint32_t)0;
+    return (uint32_t)1;
   }
 
   /**************************************************************************/
@@ -80,7 +103,7 @@
     uint8_t i2c_read_data[1];
     int i;
 
-    seq.addr  = addr;
+    seq.addr  = addr << 1;
     seq.flags = I2C_FLAG_WRITE;
     /* Select register to start writing to*/
     i2c_write_data[0] = reg;
@@ -94,11 +117,22 @@
     seq.buf[1].len  = 0;
 
     ret = I2CSPM_Transfer(i2c, &seq);
+
+    if(ret == 0)
+    {
+    // LOG_INFO (" bytes read\r\n");
+    }
+    else
+    {
+     LOG_ERROR (" bytes is not written due to returned value was %d : gesture_Write_Block_Register\r\n",ret);
+    }
+
+
     if (ret != i2cTransferDone)
     {
       return (uint32_t)ret;
     }
-    return (uint32_t)0;
+    return (uint32_t)1;
   }
 
   /**************************************************************************/
@@ -108,7 +142,7 @@
     I2C_TransferReturn_TypeDef ret;
     uint8_t i2c_write_data[1];
 
-    seq.addr  = addr;
+    seq.addr  = addr << 1;
     seq.flags = I2C_FLAG_WRITE_READ;
     /* Select register to start reading from */
     i2c_write_data[0] = reg;
@@ -119,11 +153,21 @@
     seq.buf[1].len  = length;
 
     ret = I2CSPM_Transfer(i2c, &seq);
+
+    if(ret == 0)
+        {
+        // LOG_INFO (" bytes read\r\n");
+        }
+        else
+        {
+         LOG_ERROR (" bytes is not written due to returned value was %d : gesture_Read_Block_Register\r\n",ret);
+        }
+
     if (ret != i2cTransferDone)
     {
       return (uint32_t)ret;
     }
-    return (uint32_t)0;
+    return (uint32_t)length;
   }
 
   /*************************************************************************
