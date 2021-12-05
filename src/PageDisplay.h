@@ -10,6 +10,7 @@
 
 #include "lcd.h"
 #include "string.h"
+#include "stdlib.h"
 
 void PrintDisplay();
 void scrollUp();
