@@ -27,7 +27,6 @@ enum States currentste = OPEN_S1;
 
 void ambientLightStateMachine(sl_bt_msg_t *evt)
 {
-  uint32_t ambient_analog_val;
 
   switch(currentste)
   {
@@ -60,7 +59,7 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
       //if(evt == evtADC0_SINGLE)
         {
           /* Get the converted value */
-          ambient_analog_val = ADC_DataSingleGet(ADC0);
+          uint32_t ambient_analog_val = ADC_DataSingleGet(ADC0);
           LOG_INFO("ADCval = %d\r\n", ambient_analog_val);
 
           /* Send the analog light value to the Client as an indication */
@@ -77,6 +76,7 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
 }
 
 void gesture_main(sl_bt_msg_t *evt){
+
   if(evt->data.evt_system_external_signal.extsignals == evtGestureInt)
         {
           NVIC_DisableIRQ(GPIO_EVEN_IRQn);

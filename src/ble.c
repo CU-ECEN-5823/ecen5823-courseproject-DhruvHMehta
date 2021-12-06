@@ -407,7 +407,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
                       ble_data.myAddress.addr[3], ble_data.myAddress.addr[4], \
                       ble_data.myAddress.addr[5]);
 
-        displayPrintf(DISPLAY_ROW_ASSIGNMENT, "A9");
+        displayPrintf(DISPLAY_ROW_ASSIGNMENT, "Course Project");
 #if DEVICE_IS_BLE_SERVER
         displayPrintf(DISPLAY_ROW_CONNECTION, "Advertising");
 #else
@@ -962,7 +962,7 @@ void handle_ble_event(sl_bt_msg_t *evt)
        case sl_bt_evt_sm_bonded_id:
          /* Bonded */
 
-         displayPrintf(DISPLAY_ROW_CONNECTION, "Bonded");
+         //displayPrintf(DISPLAY_ROW_CONNECTION, "Bonded");
          break;
 #endif
 
