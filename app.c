@@ -42,7 +42,6 @@
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
-//extern uint8_t gestureFlag;
 
 
 /*****************************************************************************

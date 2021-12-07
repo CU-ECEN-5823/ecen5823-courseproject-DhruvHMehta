@@ -14,5 +14,9 @@
 
 void PrintDisplay();
 void scrollUp();
+void scrollDown();
+void nextPage();
+void prevPage();
+void clearDisplay();
 
 #endif /* SRC_PAGEDISPLAY_H_ */
