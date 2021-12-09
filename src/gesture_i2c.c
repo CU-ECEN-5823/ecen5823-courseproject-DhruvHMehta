@@ -3,6 +3,9 @@
  *
  *  Created on: 19-Nov-2021
  *      Author: Pradyumna
+ *   Reference : 1) https://github.com/sparkfun/SparkFun_APDS-9960_Sensor_Arduino_Library
+ *               2) https://siliconlabs.github.io/Gecko_SDK_Doc/efm32g/html/si1147__i2c_8c_source.html
+ *
  */
 
 /***************************************************************************/
@@ -170,48 +173,3 @@
     return (uint32_t)length;
   }
 
-  /*************************************************************************
-  int16_t Si114xWriteToRegister(HANDLE si114x_handle, uint8_t address, uint8_t data)
-  {
-    return Si1147_Write_Register(((si114x_i2c_t*)si114x_handle)->i2c,((si114x_i2c_t*)si114x_handle)->addr, address, data);
-  }*/
-
-  /*************************************************************************
-  int16_t Si114xReadFromRegister(HANDLE si114x_handle, uint8_t address)
-  {
-    uint8_t data;
-    Si1147_Read_Register(((si114x_i2c_t*)si114x_handle)->i2c,((si114x_i2c_t*)si114x_handle)->addr, address, &data);
-    return data;
-  }*/
-
-  /*************************************************************************
-  int16_t Si114xBlockWrite(HANDLE si114x_handle,
-                       uint8_t address, uint8_t length, uint8_t *values)
-  {
-    return Si1147_Write_Block_Register(((si114x_i2c_t*)si114x_handle)->i2c,((si114x_i2c_t*)si114x_handle)->addr, address, length, values);
-  }*/
-
-  /*************************************************************************
-  int16_t Si114xBlockRead(HANDLE si114x_handle,
-                      uint8_t address, uint8_t length, uint8_t *values)
-  {
-    return Si1147_Read_Block_Register(((si114x_i2c_t*)si114x_handle)->i2c,((si114x_i2c_t*)si114x_handle)->addr, address, length, values);
-  }*/
-
- /*************************************************************************
-  void delay_10ms()
-  {
-   // This is needed immediately after a reset command to the Si114x
-    // In the PGM_Toolkit, there is sufficient latency, so none is added
-    // here. This is a reminder that when porting code, that this must
-    // be implemented.
-    RTCDRV_Delay(10);
-  }*/
-
- /*************************************************************************
-  void delay_1ms()
- {
-    // This can be used to save power while polling Si114x status
-    // registers by using a sleep delay instead of busy wait.
-   RTCDRV_Delay(1);
- }*/

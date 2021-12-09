@@ -4,53 +4,17 @@
  *  Created on: 15-Nov-2021
  *      Author: Pradyumna
  *
- *      Reference : https://github.com/SiliconLabs/peripheral_examples/blob/master/series1/i2c/i2c/src/main_efr.c
+ *      Reference : 1) https://github.com/sparkfun/SparkFun_APDS-9960_Sensor_Arduino_Library
+ *                  2) https://learn.sparkfun.com/tutorials/apds-9960-rgb-and-gesture-sensor-hookup-guide/all
+ *                  3) https://siliconlabs.github.io/Gecko_SDK_Doc/efm32g/html/si114x__algorithm_8c_source.html
  */
-
-/***************************************************************************//**
- * @file main_efr.c
- * @brief This project demonstrates both master and slave configurations of the
- * EFM32 I2C peripheral. Two EFM32 I2C modules are connected and set up to both
- * transmit (master mode) and receive (slave mode) between each other using a
- * common I2C bus.
- *******************************************************************************
- * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
- *******************************************************************************
- *
- * SPDX-License-Identifier: Zlib
- *
- * The licensor of this software is Silicon Laboratories Inc.
- *
- * This software is provided 'as-is', without any express or implied
- * warranty. In no event will the authors be held liable for any damages
- * arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
- *
- *******************************************************************************
- * # Evaluation Quality
- * This code has been minimally tested to ensure that it builds and is suitable
- * as a demonstration for evaluation purposes only. This code will be maintained
- * at the sole discretion of Silicon Labs.
- ******************************************************************************/
 
 #include "gesture_main.h"
 #include "stdbool.h"
 #define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
-#if GESTURE_CODE
+
 // Defines
 #define I2C_ADDRESS                     0x39 // Address from Data sheet APDS9960
 #define I2C_ADDRESS_MASK                0xFC // Address of UP buffer
@@ -77,258 +41,7 @@ int gesture_far_count_;
 int gesture_state_;
 int gesture_motion_;
 
-#if 0
-/**************************************************************************//**
- * @brief  Starting oscillators and enabling clocks
- *****************************************************************************/
-void initCMU(void)
-{
-  // Enabling clock to the I2C, GPIO, LE
-  CMU_ClockEnable(cmuClock_I2C0, true);
-  CMU_ClockEnable(cmuClock_GPIO, true);
-  CMU_ClockEnable(cmuClock_HFLE, true);
 
-  // Starting LFXO and waiting until it is stable
-  CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
-}
-
-/**************************************************************************//**
- * @brief GPIO initialization
- *****************************************************************************/
-void initGPIO(void)
-{
-  // Configure PB0 as input and int
-  GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInputPull, 1);
-  GPIO_IntConfig(PB0_port, PB0_pin, false, true, true);
-
-  // Configure LED0 and LED1 as output
-  GPIO_PinModeSet(LED0_port, LED0_pin, gpioModePushPull, 0);
-  GPIO_PinModeSet(LED1_port, LED1_pin, gpioModePushPull, 0);
-
-
-  NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
-  NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-}
-
-/**************************************************************************//**
- * @brief  enables I2C slave interrupts
- *****************************************************************************/
-void enableI2cSlaveInterrupts(void)
-{
-  I2C_IntClear(I2C0, I2C_IFC_ADDR | I2C_IF_RXDATAV | I2C_IFC_SSTOP);
-  I2C_IntEnable(I2C0, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);
-  NVIC_EnableIRQ(I2C0_IRQn);
-}
-
-/**************************************************************************//**
- * @brief  disables I2C interrupts
- *****************************************************************************/
-void disableI2cInterrupts(void)
-{
-  NVIC_DisableIRQ(I2C0_IRQn);
-  I2C_IntDisable(I2C0, I2C_IEN_ADDR | I2C_IEN_RXDATAV | I2C_IEN_SSTOP);
-  I2C_IntClear(I2C0, I2C_IFC_ADDR | I2C_IF_RXDATAV | I2C_IFC_SSTOP);
-}
-
-/**************************************************************************//**
- * @brief  Setup I2C
- *****************************************************************************/
-void initI2C(void)
-{
-  // Using default settings
-  I2C_Init_TypeDef i2cInit = I2C_INIT_DEFAULT;
-  // Use ~400khz SCK
-  i2cInit.freq = I2C_FREQ_FAST_MAX;
-  // Use 6:3 low high SCK ratio
-  i2cInit.clhr = i2cClockHLRAsymetric;
-
-  // Using PC10 (SDA) and PC11 (SCL)
-  GPIO_PinModeSet(gpioPortC, 10, gpioModeWiredAndPullUpFilter, 1);
-  GPIO_PinModeSet(gpioPortC, 11, gpioModeWiredAndPullUpFilter, 1);
-
-  // Enable I2C SDA and SCL pins, see the readme or the device datasheet for I2C pin mappings
-  I2C0->ROUTEPEN = I2C_ROUTEPEN_SDAPEN | I2C_ROUTEPEN_SCLPEN;
-  I2C0->ROUTELOC0 = (I2C0->ROUTELOC0 & (~_I2C_ROUTELOC0_SDALOC_MASK)) | I2C_ROUTELOC0_SDALOC_LOC16;
-  I2C0->ROUTELOC0 = (I2C0->ROUTELOC0 & (~_I2C_ROUTELOC0_SCLLOC_MASK)) | I2C_ROUTELOC0_SCLLOC_LOC14;
-
-  // Initializing the I2C
-  I2C_Init(I2C0, &i2cInit);
-
-  // Setting the status flags and index
-  i2c_rxInProgress = false;
-  i2c_startTx = false;
-  i2c_rxBufferIndex = 0;
-
-  // Setting up to enable slave mode
-  I2C0->SADDR = I2C_ADDRESS;
-  I2C0->SADDRMASK = I2C_ADDRESS_MASK;
-  I2C0->CTRL |= I2C_CTRL_SLAVE | I2C_CTRL_AUTOACK | I2C_CTRL_AUTOSN;
-  enableI2cSlaveInterrupts();
-}
-
-/**************************************************************************//**
- * @brief  Transmitting I2C data. Will busy-wait until the transfer is complete.
- *****************************************************************************/
-void performI2CTransfer(void)
-{
-  // Transfer structure
-  I2C_TransferSeq_TypeDef i2cTransfer;
-  I2C_TransferReturn_TypeDef result;
-
-  // Setting LED to indicate transfer
-  GPIO_PinOutSet(LED1_port, LED1_pin);
-
-  // Initializing I2C transfer
-  i2cTransfer.addr          = (I2C_ADDRESS << 1);
-  i2cTransfer.flags         = I2C_FLAG_WRITE;
-  i2cTransfer.buf[0].data   = i2c_txBuffer;
-  i2cTransfer.buf[0].len    = i2c_txBufferSize;
-  i2cTransfer.buf[1].data   = i2c_rxBuffer;
-  i2cTransfer.buf[1].len    = I2C_RXBUFFER_SIZE;
-  result = I2C_TransferInit(I2C0, &i2cTransfer);
-
-  // Sending data
-  while (result == i2cTransferInProgress)
-  {
-    result = I2C_Transfer(I2C0);
-  }
-
-  // Clearing pin to indicate end of transfer
-  GPIO_PinOutClear(LED1_port, LED1_pin);
-  enableI2cSlaveInterrupts();
-}
-
-/**************************************************************************//**
- * @brief  Receiving I2C data. Along with the I2C interrupt, it will keep the
-  EFM32 in EM1 while the data is received.
- *****************************************************************************/
-void receiveI2CData(void)
-{
-  while(i2c_rxInProgress)
-  {
-    EMU_EnterEM1();
-  }
-}
-
-/**************************************************************************//**
- * @brief I2C Interrupt Handler.
- *        The interrupt table is in assembly startup file startup_efm32.s
- *****************************************************************************/
-void I2C0_IRQHandler(void)
-{
-  int status;
-
-  status = I2C0->IF;
-
-  if (status & I2C_IF_ADDR)
-  {
-    // Address Match
-    // Indicating that reception is started
-    i2c_rxInProgress = true;
-    I2C0->RXDATA;
-    i2c_rxBufferIndex = 0;
-
-    I2C_IntClear(I2C0, I2C_IFC_ADDR);
-
-  } else if (status & I2C_IF_RXDATAV)
-  {
-    // Data received
-    i2c_rxBuffer[i2c_rxBufferIndex] = I2C0->RXDATA;
-    i2c_rxBufferIndex++;
-  }
-
-  if(status & I2C_IF_SSTOP){
-    // Stop received, reception is ended
-    I2C_IntClear(I2C0, I2C_IFC_SSTOP);
-    i2c_rxInProgress = false;
-    i2c_rxBufferIndex = 0;
-  }
-}
-
-/***************************************************************************//**
- * @brief GPIO Interrupt handler
- ******************************************************************************/
-void GPIO_EVEN_IRQHandler(void)
-{
-  // Clear pending
-  uint32_t interruptMask = GPIO_IntGet();
-  GPIO_IntClear(interruptMask);
-
-  // If RX is not in progress, a new transfer is started
-  if (!i2c_rxInProgress)
-  {
-    disableI2cInterrupts();
-      i2c_startTx = true;
-  }
-}
-
-/**************************************************************************//**
- * @brief  Main function
- ****************************************************************************
-int main(void)
-{
-  // Chip errata
-  CHIP_Init();
-
-  // Configuring clocks in the Clock Management Unit (CMU)
-  initCMU();
-
-  // Initializations
-  initGPIO();
-
-  // Setting up i2c
-  initI2C();
-
-  //LED ON to indicate operating
-  GPIO_PinOutSet(LED0_port, LED0_pin);
-
-  while (1)
-  {
-    if(i2c_rxInProgress)
-    {
-       // Receiving data
-       receiveI2CData();
-    }else if (i2c_startTx)
-    {
-       // Transmitting data
-       performI2CTransfer();
-       // Transmission complete
-       i2c_startTx = false;
-    }
-
-    // Forever enter EM2. The RTC or I2C will wake up the EFM32
-    EMU_EnterEM2(false);
-  }
-}*/
-
-void functionloop(){
-  if(i2c_rxInProgress)
-  {
-   // Receiving data
-   receiveI2CData();
-  }else if (i2c_startTx)
-  {
-   // Transmitting data
-   performI2CTransfer();
-   // Transmission complete
-   i2c_startTx = false;
-  }
-
-
-  // Forever enter EM2. The RTC or I2C will wake up the EFM32
-  EMU_EnterEM2(false);
-}
-
-#endif
-#endif
-
-/*void gesture_main(){
-  init();
-  enable();
-  read_gesture();
-  processGestureData();
-  decodeGesture();
-}*/
 int gesture_init(){
 
   uint8_t id = 0;
@@ -759,8 +472,7 @@ int readGesture()
             }
 
 #if DEBUG
-            Serial.print("FIFO Level: ");
-            Serial.println(fifo_level);
+            LOG_INFO ("FIFO Level: %d\r\n", fifo_level);
 #endif
 
             /* If there's stuff in the FIFO, read it into our data block */
@@ -774,12 +486,13 @@ int readGesture()
                     return ERROR;
                 }
 #if DEBUG
-                Serial.print("FIFO Dump: ");
+                LOG_INFO ("FIFO Dump: %d\r\n", fifo_level);
                 for ( i = 0; i < bytes_read; i++ ) {
-                    Serial.print(fifo_data[i]);
-                    Serial.print(" ");
+                  LOG_INFO (" %d\r\n", fifo_level);
                 }
-                Serial.println();
+                LOG_INFO ("\r\n");
+
+
 #endif
 
                 /* If at least 1 set of data, sort the data into U/D/L/R */
@@ -798,21 +511,17 @@ int readGesture()
                     }
 
 #if DEBUG
-                Serial.print("Up Data: ");
+                LOG_INFO ("Up Data: : \r\n");
                 for ( i = 0; i < gesture_data_.total_gestures; i++ ) {
-                    Serial.print(gesture_data_.u_data[i]);
-                    Serial.print(" ");
+                    LOG_INFO (" %d\r\n", gesture_data_.u_data[i]);
                 }
-                Serial.println();
+                LOG_INFO ("\r\n");
 #endif
 
                     /* Filter and process gesture data. Decode near/far state */
                     if( processGestureData() ) {
                         if( decodeGesture() ) {
                             //***TODO: U-Turn Gestures
-#if DEBUG
-                            //Serial.println(gesture_motion_);
-#endif
                         }
                     }
 
@@ -828,8 +537,7 @@ int readGesture()
             decodeGesture();
             motion = gesture_motion_;
 #if DEBUG
-            Serial.print("END: ");
-            Serial.println(gesture_motion_);
+            LOG_INFO ("END: %d\r\n", gesture_motion_);
 #endif
             resetGestureParameters();
             LOG_INFO("Gesture = %d\r\n", motion);
@@ -925,6 +633,7 @@ bool processGestureData()
             Serial.print(gesture_data_.l_data[i]);
             Serial.print(F(" R:"));
             Serial.println(gesture_data_.r_data[i]);
+            LOG_INFO ("END: %d\r\n", gesture_motion_);
 #endif
             if( ((gesture_data_.u_data[i] > GESTURE_THRESHOLD_OUT) &&
                 (gesture_data_.d_data[i] > GESTURE_THRESHOLD_OUT)) ||
