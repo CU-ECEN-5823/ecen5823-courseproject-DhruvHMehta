@@ -13,6 +13,7 @@
 #include "irq.h"
 #include "sl_bt_api.h"
 #include "lcd.h"
+#include "PageDisplay.h"
 
 /* Function Prototypes */
 

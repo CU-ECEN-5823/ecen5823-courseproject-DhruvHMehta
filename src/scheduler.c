@@ -17,17 +17,21 @@ enum States{POWERUP, START_CONV, MEASURE};
 enum Events{evtNone = 1, evtLETIMER0_UF, evtLETIMER0_COMP1, evtADC0_SINGLE, evtButtonPressed, evtGestureInt};
 enum States currentste = POWERUP;
 enum Events evt = evtNone;
+
+enum Gesture_States{GESTURE_IDLE, GESTURE_ENABLE};
+enum Gesture_States State_Gesture = GESTURE_IDLE;
+uint32_t ambient_analog_val;
 #else
-enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, UPDATELCD, CLOSE};
+enum States{OPEN_S1, OPEN_S2, CHARACTERISTICS_S1, CHARACTERISTICS_S2, NOTIFY_S1, NOTIFY_S2, INITLCD, UPDATELCD, CLOSE};
 enum Events{evtNone, evtOpenConnection, evtGATTComplete, evtConnectionClosed, evtButtonPressed_PB0, evtButtonPressed_PB1};
 enum States currentste = OPEN_S1;
+uint16_t prev_ambient = 51; /* Initial value for condition in UPDATELCD */
 #endif
 
 #if DEVICE_IS_BLE_SERVER
 
 void ambientLightStateMachine(sl_bt_msg_t *evt)
 {
-  uint32_t ambient_analog_val;
 
   switch(currentste)
   {
@@ -76,21 +80,45 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
   //evt = evtNone;
 }
 
-void gesture_main(sl_bt_msg_t *evt){
-  if(evt->data.evt_system_external_signal.extsignals == evtGestureInt)
-        {
-          NVIC_DisableIRQ(GPIO_EVEN_IRQn);
-          uint8_t gesturenum = readGesture();
-          if(gesturenum > 0){
-          send_gesture_value(gesturenum);
-          }
-             // readGesture();
-          //gestureFlag = 0;
+void gesture_main(sl_bt_msg_t *evt)
+{
+  switch(State_Gesture)
+  {
+  case GESTURE_IDLE:
+    {
+      if(ambient_analog_val > 50){
+          enableGestureSensor(true);
+          State_Gesture = GESTURE_ENABLE;
+      }
+    }
+    break;
 
-          timerWaitUs_polled(100*1000);
-          NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-          //LOG_INFO("Gesture = %d\r\n", gesturenum);
-        }
+  case GESTURE_ENABLE:
+    {
+      if(ambient_analog_val <= 50){
+          disableGestureSensor();
+          State_Gesture = GESTURE_IDLE;
+      }
+
+      else{
+          if(evt->data.evt_system_external_signal.extsignals == evtGestureInt)
+              {
+                NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+                uint8_t gesturenum = readGesture();
+                if(gesturenum > 0){
+                send_gesture_value(gesturenum);
+                }
+                   // readGesture();
+                //gestureFlag = 0;
+
+                timerWaitUs_polled(100*1000);
+                NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+                //LOG_INFO("Gesture = %d\r\n", gesturenum);
+              }
+      }
+    }
+    break;
+  }
 }
 
 #else
@@ -131,8 +159,8 @@ void discovery_state_machine(sl_bt_msg_t *evt)
 
               /* Discover the primary services */
               sc = sl_bt_gatt_discover_primary_services_by_uuid(ble_data->gatt_server_connection,
-                                                                sizeof(ble_data->encrypted_service),
-                                                                ble_data->encrypted_service);
+                                                                sizeof(ble_data->gesture_service),
+                                                                ble_data->gesture_service);
 
               if (sc != SL_STATUS_OK)
                 {
@@ -165,17 +193,14 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         /* Characteristics State, check if Services discovery is complete, get the discover characteristics API */
       case CHARACTERISTICS_S2:
 
-        /* Stubbing this state and moving to NOTIFY_S1 */
-        currentste = NOTIFY_S1;
-
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
               /* Discover the characteristics in the Btn Service */
               sc = sl_bt_gatt_discover_characteristics_by_uuid(ble_data->gatt_server_connection,
                                                           ble_data->serviceHandle[1],
-                                                          sizeof(ble_data->encrypted_char),
-                                                          ble_data->encrypted_char);
+                                                          sizeof(ble_data->gesture_char),
+                                                          ble_data->gesture_char);
 
               if (sc != SL_STATUS_OK)
                 {
@@ -209,10 +234,6 @@ void discovery_state_machine(sl_bt_msg_t *evt)
         /* Notify State, check if Characteristics discovery is complete, send the characteristic notification */
       case NOTIFY_S2:
 
-        /* Stubbing this state and moving to UPDATE_LCD */
-        PrintDisplay();
-        currentste = UPDATELCD;
-
         if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_procedure_completed_id) &&
             ble_data->discoveryEvt == evtGATTComplete)
             {
@@ -226,43 +247,81 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                   LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
                 }
 
-              currentste = UPDATELCD;
+              currentste = INITLCD;
 
             }
+        break;
+
+        /* INITLCD State, Print the initial LCD display once bonded */
+      case INITLCD:
+        if(ble_data->bonding_state == BONDED)
+          {
+            PrintDisplay();
+            currentste = UPDATELCD;
+          }
         break;
 
       case UPDATELCD:
         //if((SL_BT_MSG_ID(evt->header) == sl_bt_evt_gatt_characteristic_value_id))
           //{
             /* Check if the ambient light value is below the threshold */
-            if(getSensorValue(AMBIENT) < 50)
+            if(getSensorValue(AMBIENT) < 50 && prev_ambient >= 50)
               {
                 /* Turn off the LCD */
-                currentste = CLOSE;
+                clearDisplay();
+                sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
+                                                            ble_data->characteristicHandle[1],
+                                                            sl_bt_gatt_disable);
+
+                if (sc != SL_STATUS_OK)
+                  {
+                    LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                  }
+                prev_ambient = getSensorValue(AMBIENT);
+               }
+
+            else if(getSensorValue(AMBIENT) >= 50 && prev_ambient < 50)
+              {
+                /* Turn on the LCD */
+                PrintDisplay();
+                sc = sl_bt_gatt_set_characteristic_notification(ble_data->gatt_server_connection,
+                                                            ble_data->characteristicHandle[1],
+                                                            sl_bt_gatt_indication);
+
+                if (sc != SL_STATUS_OK)
+                  {
+                    LOG_ERROR("sl_bt_gatt_discover_characteristics_by_uuid() returned != 0 status=0x%04x", (unsigned int) sc);
+                  }
+
+                prev_ambient = getSensorValue(AMBIENT);
               }
 
             else
               {
-                /* Update the LCD based on gesture obtained
-                switch(getSensorValue(GESTURE))
+                /* Update the LCD based on gesture obtained */
+                switch(getSensorValue(GESTURE_SNSR))
                 {
                   case LEFT:
                     nextPage();
+                    PrintDisplay();
                     break;
 
                   case RIGHT:
                     prevPage();
+                    PrintDisplay();
                     break;
 
                   case UP:
                     scrollUp();
+                    PrintDisplay();
                     break;
 
                   case DOWN:
                     scrollDown();
+                    PrintDisplay();
                     break;
                 }
-                */
+                /*
                 if(evt->data.evt_system_external_signal.extsignals == evtButtonPressed_PB1)
                   {
                     scrollDown();
@@ -273,6 +332,7 @@ void discovery_state_machine(sl_bt_msg_t *evt)
                     scrollUp();
                    PrintDisplay();
                   }
+                  */
               }
           //}
         break;

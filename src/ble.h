@@ -25,10 +25,14 @@
 #define AMBIENT 0
 #define GESTURE_SNSR 1
 
-#define LEFT  0
-#define RIGHT 1
-#define UP    2
-#define DOWN  3
+#define LEFT  1
+#define RIGHT 2
+#define UP    3
+#define DOWN  4
+
+#define NOT_BONDED  0
+#define BONDING     1
+#define BONDED      2
 
 #if DEVICE_IS_BLE_SERVER
 typedef struct
@@ -50,13 +54,13 @@ typedef struct
    uint8_t gatt_server_connection;  /* Connection Handle */
    uint8_t ambient_service[16];      /* Thermometer Service UUID */
    uint8_t ambient_char[16];         /* Thermometer Measurement Characteristic UUID */
-   uint8_t encrypted_service[16];   /* Encrypted Service UUID */
-   uint8_t encrypted_char[16];      /* Encrypted Characteristic UUID (Button State) */
+   uint8_t gesture_service[16];      /* Encrypted Service UUID */
+   uint8_t gesture_char[16];      /* Encrypted Characteristic UUID (Button State) */
    uint32_t serviceHandle[2];       /* Service Handle */
    uint8_t characteristicHandle[2]; /* Characteristic Handle */
    bd_addr serverAddress;           /* Hard-coded address of server */
    uint8_t discoveryEvt;            /* Event in Discovery State Machine */
-   uint8_t btn_indications_enabled; /* Button state indications enabled */
+   uint8_t gesture_indications_enabled; /* Button state indications enabled */
    uint8_t bonding_state;           /* Bonded = 1/ Not bonded = 0 */
 }ble_data_struct_t;
 #endif

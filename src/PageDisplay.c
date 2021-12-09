@@ -147,8 +147,7 @@ void scrollUp()
 
     currentPos = newline + 1;
 
-    for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
-      displayPrintf(i, " ");
+    clearDisplay();
 }
 
 void scrollDown()
@@ -205,8 +204,7 @@ void nextPage()
       pageCount++;
       currentPos = pageBreak[pageCount];
 
-      for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
-        displayPrintf(i, " ");
+      clearDisplay();
     }
 }
 
@@ -217,7 +215,12 @@ void prevPage()
       pageCount--;
       currentPos = pageBreak[pageCount];
 
-      for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
-        displayPrintf(i, " ");
+      clearDisplay();
     }
+}
+
+void clearDisplay()
+{
+  for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
+    displayPrintf(i, " ");
 }
