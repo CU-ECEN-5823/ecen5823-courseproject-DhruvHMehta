@@ -108,8 +108,6 @@ void gesture_main(sl_bt_msg_t *evt)
                 if(gesturenum > 0){
                 send_gesture_value(gesturenum);
                 }
-                   // readGesture();
-                //gestureFlag = 0;
 
                 timerWaitUs_polled(100*1000);
                 NVIC_EnableIRQ(GPIO_EVEN_IRQn);
@@ -370,11 +368,6 @@ void schedulerSetEvent_ADC0_Single()
 {
   CORE_CRITICAL_SECTION(sl_bt_external_signal(evtADC0_SINGLE););
   //evt = evtADC0_SINGLE;
-}
-
-void schedulerSetEvent_I2Cdone()
-{
-  ;
 }
 
 void schedulerSetEvent_ButtonPressed()

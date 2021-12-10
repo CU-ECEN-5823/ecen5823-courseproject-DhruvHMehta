@@ -222,34 +222,6 @@ static uint8_t UUID_Compare(sl_bt_msg_t *evt, uint8_t evttype, uint8_t sensortyp
   return 0;
 }
 
-// Original code from Dan Walkes. I (Sluiter) fixed a sign extension bug with the mantissa.
-// convert IEEE-11073 32-bit float to integer
-static int32_t gattFloat32ToInt(const uint8_t *value_start_little_endian)
-{
-  uint8_t     signByte = 0;
-  int32_t     mantissa;
-  // data format pointed at by value_start_little_endian is:
-  // [0]       = contains the flags byte
-  // [3][2][1] = mantissa (24-bit 2’s complement)
-  // [4]       = exponent (8-bit 2’s complement)
-  int8_t exponent = (int8_t)value_start_little_endian[4];
-
-  // sign extend the mantissa value if the mantissa is negative
-  if (value_start_little_endian[3] & 0x80)
-    { // msb of [3] is the sign of the mantissa
-      signByte = 0xFF;
-    }
-
-  mantissa = (int32_t) (value_start_little_endian[1]  << 0)  |
-                       (value_start_little_endian[2]  << 8)  |
-                       (value_start_little_endian[3]  << 16) |
-                       (signByte                      << 24) ;
-
-  // value = 10^exponent * mantissa, pow() returns a double type
-  return (int32_t) (pow(10, exponent) * mantissa);
-
-} // gattFloat32ToInt
-
 uint16_t getSensorValue(uint8_t sensortype)
 {
   uint8_t returnval;
@@ -273,10 +245,8 @@ void handle_ble_event(sl_bt_msg_t *evt)
     sl_status_t sc;
     uint8_t address_type;
 #if DEVICE_IS_BLE_SERVER
-    uint8_t button_val = 0;
 #else
     uint8_t slave_addr_match = 0;
-    uint8_t client_btn_state;
 #endif
     // Handle stack events
     switch (SL_BT_MSG_ID(evt->header)) {
@@ -671,63 +641,6 @@ void handle_ble_event(sl_bt_msg_t *evt)
                     LOG_ERROR("sl_bt_sm_passkey_confirm() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
                   }
               }
-#if 0
-            /* Check the button state */
-            button_val = GPIO_PinInGet(gpioPortF, PB0_pin);
-
-            /* 0 means that the button is pressed since the button is connected to GND */
-            if(button_val == 1)
-                displayPrintf(DISPLAY_ROW_9, "Button Released");
-            else if(button_val == 0)
-              displayPrintf(DISPLAY_ROW_9, "Button Pressed");
-
-            /* To interpret button press as 1 and release as 0 */
-            button_val = !button_val;
-
-            // -------------------------------// Write our local GATT DB// -------------------------------
-            sc = sl_bt_gatt_server_write_attribute_value(
-                gattdb_button_state, // handle from gatt_db.h
-                0,                              // offset
-                1,                              // length
-                &button_val      // pointer to buffer where data is
-            );
-
-            if (sc != SL_STATUS_OK)
-              {
-                LOG_ERROR("sl_bt_gatt_server_write_attribute_value() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
-              }
-
-            /* Send indications only if connection is established, client is bonded and indications are enabled */
-            if((ble_data.gatt_server_connection != 0) && (ble_data.btn_indications_enabled == 1) &&
-                (ble_data.bonding_state == BONDED) && (ble_data.in_flight == 0))
-              {
-
-                sc = sl_bt_gatt_server_send_indication(ble_data.gatt_server_connection,
-                                                       gattdb_button_state,
-                                                       1,
-                                                       &button_val);
-
-                ble_data.in_flight = 1;
-
-                if (sc != SL_STATUS_OK)
-                  {
-                    LOG_ERROR("sl_bt_gatt_server_send_indication() returned != 0 status=0x%04x\r\n", (unsigned int) sc);
-                    ble_data.in_flight = 0;
-                  }
-
-              }
-
-            else if ((ble_data.gatt_server_connection != 0) && (ble_data.btn_indications_enabled == 1) &&
-                (ble_data.bonding_state == BONDED) && (ble_data.in_flight == 1))
-              {
-                indication_data.charHandle   = gattdb_button_state;
-                indication_data.bufferLength = 1;
-                memcpy(indication_data.buffer, &button_val, 1);
-
-                if((cbfifo_enqueue(&queue, &indication_data)) == -1)
-                  LOG_ERROR("Queue full, discarding event\r\n");
-              }
-#endif
           }
         break;
 

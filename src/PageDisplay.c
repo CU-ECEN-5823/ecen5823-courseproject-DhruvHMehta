@@ -63,6 +63,7 @@ void PrintDisplay()
   char singleLine[20];
   static int doOnce = 1;
 
+  /* Initial setting for variables */
   if(doOnce)
     {
       currentPos = Book1;
@@ -74,20 +75,25 @@ void PrintDisplay()
   newline = strchr(currentPos, '\n');
   oldline = currentPos;
 
+    /* Loop until newline delimiter, print on a new row on each newline
+     * or until the max number of bytes can be displayed on a row
+     */
     while(newline != NULL)
       {
         memset(singleLine, '\0', sizeof(singleLine)/sizeof(char));
 
+          /* Too many bytes on a line, limit them and print the rest on next line */
         if(newline - oldline > DISPLAY_ROW_LEN - 2)
           {
             newline = oldline + DISPLAY_ROW_LEN - 2;
             sameLineFlag = 1;
           }
 
+        /* Copy the final line to singleLine to display */
         strncpy(singleLine, currentPos + (oldline - currentPos), newline - oldline);
-        //LOG_INFO("singleLine = %s\r\n", singleLine);
         displayPrintf(row++, singleLine);
 
+        /* All rows printed, update the position where the page ended and break out */
         if(row == DISPLAY_NUMBER_OF_ROWS - 1)
           {
             if(doOnce)
@@ -104,14 +110,18 @@ void PrintDisplay()
               }
             break;
           }
+
+        /* Handling for too many bytes on a single line */
         if(sameLineFlag)
           {
             oldline = newline;
             sameLineFlag = 0;
           }
 
+        /* Oldline updated to the first character after newline */
         else oldline = newline + 1;
 
+        /* Find the next newline character */
         newline = strchr(currentPos + (oldline - currentPos), '\n');
       }
 
@@ -125,6 +135,7 @@ void scrollUp()
   char *newline = strchr(currentPos, '\n');
   int lineCount = 0, sameLineFlag = 0;
 
+  /* Loop until we skip three lines */
   while(lineCount != 2 && newline != NULL)
     {
       if(newline - oldline > DISPLAY_ROW_LEN - 2)
@@ -157,6 +168,7 @@ void scrollDown()
   int lineCount = 0, sameLineFlag = 0;
   int byteDiff = 0;
 
+  /* Needed to copy the string and reverse it */
   char *cpystring = malloc(sizeof(char)*(currentPos - Book1 + 2));
   if(cpystring == NULL)
     return;
@@ -164,10 +176,12 @@ void scrollDown()
   strncpy(cpystring, Book1, (currentPos - Book1 + 1));
   cpystring[currentPos - Book1 + 2] = '\0';
 
+  /* Reverse the copied string and find a newline in that direction */
   revString(cpystring);
   oldline = cpystring;
   newline = strchr(cpystring, '\n');
 
+  /* Loop until we skip three newlines in the reverse direction */
   while(lineCount != 2 && newline != NULL)
     {
       if(newline - oldline > DISPLAY_ROW_LEN - 2)
@@ -188,6 +202,9 @@ void scrollDown()
       lineCount++;
     }
 
+  /* Find the byte offset from current position and go back those many bytes
+   * in the original string
+   */
   byteDiff = (newline + 1) - cpystring;
   if(byteDiff < 0 || byteDiff > (int)strlen(cpystring))
     currentPos = Book1;
@@ -199,6 +216,7 @@ void scrollDown()
 
 void nextPage()
 {
+  /* Update page number and if data exists, update position to print */
   if(pageBreak[pageCount + 1] != NULL)
     {
       pageCount++;
@@ -210,6 +228,7 @@ void nextPage()
 
 void prevPage()
 {
+  /* Update page number and if data exists, update position to print */
   if(pageBreak[pageCount - 1] != NULL)
     {
       pageCount--;
@@ -221,6 +240,7 @@ void prevPage()
 
 void clearDisplay()
 {
+  /* Clear all rows */
   for(int i = 0; i < DISPLAY_NUMBER_OF_ROWS - 1; i++)
     displayPrintf(i, " ");
 }

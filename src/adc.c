@@ -38,28 +38,6 @@ void ADCInit()
   ADC_IntEnable(ADC0, ADC_IEN_SINGLE);
   NVIC_EnableIRQ(ADC0_IRQn);
 
-  uint32_t retval;
-
-#if 0
-  while(1)
-    {
-      gpioAMBSensor(true);
-      for(long i = 0; i < 100000; i++);
-
-      /* Start a Conversion */
-      ADC_Start(ADC0, adcStartSingle);
-
-      /* Wait till conversion is complete */
-      while(!(ADC0->STATUS && ADC_STATUS_SINGLEDV));
-
-      /* Get the converted value */
-      //retval = ADC_DataSingleGet(ADC0);
-      //LOG_INFO("ADCval = %d\r\n", retval);
-
-      //gpioAMBSensor(false);
-      for(long i = 0; i < 1000000; i++);
-    }
-#endif
 }
 
 

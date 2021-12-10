@@ -69,36 +69,6 @@ void LETIMER0_IRQHandler()
 #endif
 }
 
-#if DEVICE_IS_BLE_SERVER
-/***************************************************************************//**
- * @name I2C0_IRQHandler
- *
- * @brief
- *   Interrupt handler which sets events based on the interrupt.
- *
- * @param[in] osc
- *   none
- *
- * @return void
- ******************************************************************************/
-void I2C0_IRQHandler()
-{
-
-  I2CTransferReturn = I2C_Transfer(I2C0);
-
-  if(I2CTransferReturn == i2cTransferDone)
-    schedulerSetEvent_I2Cdone();
-
-  if(I2CTransferReturn < 0)
-    LOG_ERROR("I2C Transfer Failed with status = %d\n", I2CTransferReturn);
-}
-
-I2C_TransferReturn_TypeDef getI2CTransferReturn()
-{
-  return I2CTransferReturn;
-}
-#endif
-
 uint32_t letimerMilliseconds()
 {
   uint32_t ctrmilliseconds;

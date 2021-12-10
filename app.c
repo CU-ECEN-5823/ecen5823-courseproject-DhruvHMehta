@@ -86,33 +86,15 @@ SL_WEAK void app_init(void)
   // Student Edit: Add a call to gpioInit() here
   gpioInit();
   OscillatorInit();
-  //I2CInit();
   LETIMER0Init();
   LETIMER0InterruptEn();
+
+#if DEVICE_IS_BLE_SERVER
   ADCInit();
 
-  //I2CInit_gesture();
   gesture_init();
   enableGestureSensor(true);
-  /*while(1)
-    {
-      if(gestureFlag)
-        {
-          NVIC_DisableIRQ(GPIO_EVEN_IRQn);
-          //LOG_INFO("Gesture = %d\r\n", gesturenum);
-          int gesturenum = readGesture();
-              //readGesture();
-          gestureFlag = 0;
-          timerWaitUs_polled(100*1000);
-          NVIC_EnableIRQ(GPIO_EVEN_IRQn);
-          //LOG_INFO("Gesture = %d\r\n", gesturenum);
-        }
-    }*/
-
-
-
-
-  //ADCInit();
+#endif
 
 #if (LOWEST_ENERGY_MODE == EM0)
   /* No em requirement */
@@ -138,11 +120,6 @@ SL_WEAK void app_process_action(void)
   //         later assignments.
 
   /* Do nothing */
-  //static int nothingcount = 0;
-  //nothingcount++;
-
-  //if(nothingcount >= 10)
-    //ambientLightStateMachine();
 }
 
 /**************************************************************************//**
@@ -165,8 +142,7 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 #if DEVICE_IS_BLE_SERVER
   // sequence through states driven by events
     ambientLightStateMachine(evt);
-   //temperatureStateMachine(evt);    // put this code in scheduler.c/.h
-      gesture_main(evt);
+    gesture_main(evt);
 #else
    // sequence through service and characteristic discovery
    discovery_state_machine(evt);    // put this code in scheduler.c/.h
