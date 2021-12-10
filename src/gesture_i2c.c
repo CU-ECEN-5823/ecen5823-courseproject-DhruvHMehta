@@ -9,10 +9,7 @@
  */
 
 /***************************************************************************/
-  //#include "i2cspm.h"
- // #include "si114x_functions.h"
- // #include "rtcdriver.h"
- // #include "si1147_i2c.h"
+
 #include "em_i2c.h"
 #include "gesture_i2c.h"
 
@@ -20,11 +17,13 @@
 #include "src/log.h"
 
   /*******************************************************************************
-   **************************   GLOBAL FUNCTIONS   *******************************
-   ******************************************************************************/
-
-
-
+      * @name gesture_Read_Register
+      * @brief Driver function gesture application for reading a register.
+      *
+      * @param I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t *data
+      * @return True if the data is read completely , else with the error value
+      *
+      *******************************************************************************/
   /**************************************************************************/
   uint32_t gesture_Read_Register(I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t *data)
   {
@@ -59,7 +58,14 @@
     }
     return (uint32_t)1;
   }
-
+  /*******************************************************************************
+      * @name gesture_Write_Register
+      * @brief Driver function gesture application for writing a register.
+      *
+      * @param I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t data
+      * @return True if the data is written completely , else with the error value
+      *
+      *******************************************************************************/
   /**************************************************************************/
   uint32_t gesture_Write_Register(I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t data)
   {
@@ -96,7 +102,14 @@
     }
     return (uint32_t)1;
   }
-
+  /*******************************************************************************
+    * @name gesture_Write_Block_Register
+    * @brief Driver function gesture application for writing a block of register data.
+    *
+    * @param I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t length, uint8_t const *data
+    * @return True if the data is written completely , else with the error value
+    *
+    *******************************************************************************/
   /**************************************************************************/
   uint32_t gesture_Write_Block_Register(I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t length, uint8_t const *data)
   {
@@ -137,7 +150,14 @@
     }
     return (uint32_t)1;
   }
-
+  /*******************************************************************************
+   * @name gesture_Read_Block_Register
+   * @brief Driver function gesture application for reading a block of register data.
+   *
+   * @param I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t length, uint8_t *data
+   * @return length if the data is read completely , else with the error value
+   *
+   *******************************************************************************/
   /**************************************************************************/
   uint32_t gesture_Read_Block_Register(I2C_TypeDef *i2c,uint8_t addr, uint8_t reg, uint8_t length, uint8_t *data)
   {

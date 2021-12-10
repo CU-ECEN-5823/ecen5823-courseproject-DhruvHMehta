@@ -137,7 +137,7 @@ void timerWaitUs_polled(uint32_t us_wait)
   counterval = LETIMER_CounterGet(LETIMER0);
 
   /* If the requested time does not cause a timer rollover, continue normally */
-  if((counterval - reqcounter) >= 0)
+  if(counterval >= reqcounter)
     counterwait = counterval - reqcounter;
 
   /* Timer rollover will occur, calculate accordingly */

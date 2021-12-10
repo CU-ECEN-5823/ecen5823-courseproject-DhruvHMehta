@@ -67,6 +67,7 @@ void PrintDisplay()
   if(doOnce)
     {
       currentPos = Book1;
+      /* memset complains about using NULL, however this works */
       memset(pageBreak, NULL, sizeof(pageBreak)/sizeof(char *));
       LOG_INFO("size = %d\r\n", sizeof(pageBreak)/sizeof(char *));
       pageBreak[pageCount] = Book1;

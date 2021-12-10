@@ -29,7 +29,14 @@ uint16_t prev_ambient = 51; /* Initial value for condition in UPDATELCD */
 #endif
 
 #if DEVICE_IS_BLE_SERVER
-
+/*******************************************************************************
+ * @name ambientLightStateMachine
+ * @brief Server ambient Light state machine
+ *
+ * @param sl_bt_msg_t *evt - Current BLE Stack event
+ * @return none
+ *
+ *******************************************************************************/
 void ambientLightStateMachine(sl_bt_msg_t *evt)
 {
 
@@ -80,12 +87,21 @@ void ambientLightStateMachine(sl_bt_msg_t *evt)
   //evt = evtNone;
 }
 
+/*******************************************************************************
+ * @name gesture_main
+ * @brief Server Gesture Control state machine
+ *
+ * @param sl_bt_msg_t *evt - Current BLE Stack event
+ * @return none
+ *
+ *******************************************************************************/
 void gesture_main(sl_bt_msg_t *evt)
 {
   switch(State_Gesture)
   {
   case GESTURE_IDLE:
     {
+      /*Checks for the ambient value greater than threshold*/
       if(ambient_analog_val > 50){
           enableGestureSensor(true);
           State_Gesture = GESTURE_ENABLE;
@@ -95,17 +111,21 @@ void gesture_main(sl_bt_msg_t *evt)
 
   case GESTURE_ENABLE:
     {
+      /*Checks for the ambient value less than threshold*/
       if(ambient_analog_val <= 50){
           disableGestureSensor();
           State_Gesture = GESTURE_IDLE;
       }
 
       else{
+          /*Checks for the external interrupt from thr gesture sensor*/
           if(evt->data.evt_system_external_signal.extsignals == evtGestureInt)
               {
                 NVIC_DisableIRQ(GPIO_EVEN_IRQn);
+                /*Initiate the process of gesture read*/
                 uint8_t gesturenum = readGesture();
                 if(gesturenum > 0){
+                    /*Send the value to the client as indication*/
                 send_gesture_value(gesturenum);
                 }
 
